@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 
 @Preview(showBackground = true, widthDp = 360)
@@ -43,8 +45,16 @@ fun DashboardScreen(
     onNavigateToEmergency: () -> Unit = {}
 ) {
     Scaffold(
-        containerColor = OffWhite,
-        bottomBar = { DashboardBottomNavBar(onNavigateToReports, onNavigateToCommunity, onNavigateToNotifications, onNavigateToProfile) }
+        containerColor = NotifBg,
+        bottomBar = {
+            StandardBottomNavBar(
+                selectedTab = NavTab.HOME,
+                onNavigateToReports = onNavigateToReports,
+                onNavigateToCommunity = onNavigateToCommunity,
+                onNavigateToNotifications = onNavigateToNotifications,
+                onNavigateToProfile = onNavigateToProfile
+            )
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -517,66 +527,4 @@ fun AnnouncementCard(
     }
 }
 
-@Composable
-fun DashboardBottomNavBar(
-    onNavigateToReports: () -> Unit = {},
-    onNavigateToCommunity: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
-) {
-    val items = listOf(
-        Triple("Home", Icons.Outlined.Home, true),
-        Triple("Reports", Icons.Outlined.Description, false),
-        Triple("Community", Icons.Outlined.Groups, false),
-        Triple("Alerts", Icons.Outlined.Notifications, false),
-        Triple("Profile", Icons.Outlined.AccountCircle, false)
-    )
-
-    Surface(color = Color.White, shadowElevation = 8.dp) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            items.forEach { (label, icon, selected) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clickable { 
-                            if (label == "Reports") onNavigateToReports()
-                            if (label == "Community") onNavigateToCommunity()
-                            if (label == "Alerts") onNavigateToNotifications()
-                            if (label == "Profile") onNavigateToProfile()
-                        }
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(DesignTokens.BottomNavIndicatorWidth)
-                            .height(DesignTokens.BottomNavIndicatorHeight)
-                            .background(
-                                if (selected) DeepNavy else Color.Transparent,
-                                RoundedCornerShape(2.dp)
-                            )
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Icon(
-                        icon,
-                        contentDescription = label,
-                        tint = if (selected) DeepNavy else TextMuted,
-                        modifier = Modifier.size(DesignTokens.BottomNavIconSize)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        label,
-                        fontSize = DesignTokens.BottomNavLabelSize,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) DeepNavy else TextMuted,
-                        lineHeight = 14.sp
-                    )
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of DashboardBottomNavBar

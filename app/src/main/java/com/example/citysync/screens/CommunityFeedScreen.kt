@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 
 @Composable
@@ -32,7 +34,9 @@ fun CommunityFeedScreen(
     onBack: () -> Unit = {},
     onNavigateToReports: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToReportDetails: (String) -> Unit = {},
+    onCommentClick: (String) -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All Reports") }
     
@@ -76,6 +80,14 @@ fun CommunityFeedScreen(
         )
     }
 
+    val filteredPosts = remember(selectedFilter) {
+        when (selectedFilter) {
+            "Trending" -> posts.sortedByDescending { it.likes + it.commentsCount }
+            "Nearby" -> posts // Mock logic
+            else -> posts
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFF4F6F9),
         topBar = {
@@ -94,7 +106,15 @@ fun CommunityFeedScreen(
                 )
             }
         },
-        bottomBar = { CommunityBottomNavBar(onBack, onNavigateToReports, onNavigateToNotifications, onNavigateToProfile) }
+        bottomBar = {
+            StandardBottomNavBar(
+                selectedTab = NavTab.COMMUNITY,
+                onNavigateToHome = onBack,
+                onNavigateToReports = onNavigateToReports,
+                onNavigateToNotifications = onNavigateToNotifications,
+                onNavigateToProfile = onNavigateToProfile
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -139,9 +159,11 @@ fun CommunityFeedScreen(
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(posts, key = { it.id }) { post ->
+                items(filteredPosts, key = { it.id }) { post ->
                     CommunityPostCard(
                         post = post,
+                        onClick = { onNavigateToReportDetails("REP-2026-00123${post.id}") },
+                        onCommentIconClick = { onCommentClick("REP-2026-00123${post.id}") },
                         onLikeClick = {
                             val index = posts.indexOfFirst { it.id == post.id }
                             if (index != -1) {
@@ -163,6 +185,8 @@ fun CommunityFeedScreen(
 @Composable
 fun CommunityPostCard(
     post: PostData,
+    onClick: () -> Unit = {},
+    onCommentIconClick: () -> Unit = {},
     onLikeClick: () -> Unit = {}
 ) {
     var showComments by remember { mutableStateOf(false) }
@@ -171,7 +195,7 @@ fun CommunityPostCard(
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9)),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header
@@ -330,7 +354,7 @@ fun CommunityPostCard(
                     Spacer(modifier = Modifier.width(20.dp))
                     
                     IconButton(
-                        onClick = { showComments = !showComments },
+                        onClick = onCommentIconClick,
                         modifier = Modifier.size(24.dp)
                     ) {
                         Icon(
@@ -384,7 +408,7 @@ fun CommentDrawer(onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             
             // Dummy comments
-            CommentItem("Juan Dela Cruz", "This is very dangerous indeed! Hope it gets fixed soon.", "1h ago")
+            CommentItem("Raiden Villapando", "This is very dangerous indeed! Hope it gets fixed soon.", "1h ago")
             Spacer(modifier = Modifier.height(12.dp))
             CommentItem("Ana Reyes", "I passed by earlier and it was still broken.", "30m ago")
             
@@ -429,76 +453,7 @@ fun CommentItem(name: String, comment: String, time: String) {
     }
 }
 
-@Composable
-fun CommunityBottomNavBar(
-    onBack: () -> Unit = {},
-    onNavigateToReports: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
-) {
-    val items = listOf(
-        NavigationItem("Home", Icons.Outlined.Home, false),
-        NavigationItem("Reports", Icons.Outlined.Description, false),
-        NavigationItem("Community", Icons.Outlined.Groups, true),
-        NavigationItem("Alerts", Icons.Outlined.Notifications, false),
-        NavigationItem("Profile", Icons.Outlined.AccountCircle, false)
-    )
-
-    Surface(
-        color = Color.White,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column {
-            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                items.forEach { item ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { 
-                                if (item.label == "Home") onBack()
-                                if (item.label == "Reports") onNavigateToReports()
-                                if (item.label == "Alerts") onNavigateToNotifications()
-                                if (item.label == "Profile") onNavigateToProfile()
-                            }
-                    ) {
-                        // Active Indicator
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(2.dp)
-                                .background(if (item.selected) DeepNavy else Color.Transparent)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Icon(
-                            item.icon,
-                            contentDescription = item.label,
-                            tint = if (item.selected) DeepNavy else Color(0xFFA0AEC0),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(4.dp))
-                        
-                        Text(
-                            item.label,
-                            fontSize = 10.sp,
-                            color = if (item.selected) DeepNavy else Color(0xFFA0AEC0),
-                            fontWeight = if (item.selected) FontWeight.Medium else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of CommunityBottomNavBar
 
 data class PostData(
     val id: Int,

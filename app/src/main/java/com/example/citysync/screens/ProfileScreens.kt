@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,9 +69,9 @@ fun ProfileFlow(
     var currentSubView by remember { mutableStateOf(ProfileSubView.MAIN) }
     var userData by remember { 
         mutableStateOf(UserProfileData(
-            firstName = "Juan",
-            lastName = "Dela Cruz",
-            email = "juan.delacruz@email.com",
+            firstName = "Raiden",
+            lastName = "Villapando",
+            email = "raiden.villapando@email.com",
             phone = "+63 912 345 6789",
             address = "Manila, Philippines"
         ))
@@ -96,6 +98,7 @@ fun ProfileFlow(
             when (subView) {
                 ProfileSubView.MAIN -> MainProfileView(
                     userData = userData,
+                    onBack = onBack,
                     onEditClick = { currentSubView = ProfileSubView.EDIT },
                     onSettingsClick = { currentSubView = ProfileSubView.SETTINGS },
                     onNavigateToReports = onNavigateToReports,
@@ -179,6 +182,7 @@ fun ProfileFlow(
 @Composable
 fun MainProfileView(
     userData: UserProfileData,
+    onBack: () -> Unit,
     onEditClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onNavigateToReports: () -> Unit,
@@ -197,13 +201,12 @@ fun MainProfileView(
         containerColor = notifBg,
         topBar = { ProfileHeader("Profile", notifBlue, showShare = true) },
         bottomBar = { 
-            ProfileBottomNavBar(
-                blueColor = notifBlue,
-                textMuted = notifTextMuted,
-                onHomeClick = { /* Handled in Flow */ }, 
-                onReportsClick = onNavigateToReports,
-                onCommunityClick = onNavigateToCommunity,
-                onAlertsClick = onNavigateToNotifications
+            StandardBottomNavBar(
+                selectedTab = NavTab.PROFILE,
+                onNavigateToHome = onBack,
+                onNavigateToReports = onNavigateToReports,
+                onNavigateToCommunity = onNavigateToCommunity,
+                onNavigateToNotifications = onNavigateToNotifications
             ) 
         }
     ) { innerPadding ->
@@ -870,65 +873,7 @@ fun AppInfoRow(label: String, value: String, textMuted: Color) {
     }
 }
 
-@Composable
-fun ProfileBottomNavBar(
-    blueColor: Color,
-    textMuted: Color,
-    onHomeClick: () -> Unit = {},
-    onReportsClick: () -> Unit = {},
-    onCommunityClick: () -> Unit = {},
-    onAlertsClick: () -> Unit = {}
-) {
-    val items = listOf(
-        Triple("Home", Icons.Outlined.Home, false),
-        Triple("Reports", Icons.Outlined.Description, false),
-        Triple("Community", Icons.Outlined.Groups, false),
-        Triple("Alerts", Icons.Outlined.Notifications, false),
-        Triple("Profile", Icons.Default.AccountCircle, true)
-    )
-
-    Surface(color = Color.White, shadowElevation = 16.dp) {
-        Row(
-            modifier = Modifier.navigationBarsPadding().fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            items.forEach { (label, icon, selected) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 4.dp).clickable {
-                        when (label) {
-                            "Home" -> onHomeClick()
-                            "Reports" -> onReportsClick()
-                            "Community" -> onCommunityClick()
-                            "Alerts" -> onAlertsClick()
-                        }
-                    }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(if (selected) blueColor else Color.Transparent, RoundedCornerShape(2.dp))
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Icon(
-                        icon,
-                        contentDescription = label,
-                        tint = if (selected) blueColor else textMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        label,
-                        fontSize = 12.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) blueColor else textMuted
-                    )
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of ProfileBottomNavBar
 
 @Preview(showBackground = true)
 @Composable
@@ -941,9 +886,9 @@ fun MainProfileViewPreview() {
     val red = Color(0xFFDC2626)
     val emailMuted = Color(0xFF7A8B9C)
     
-    val data = UserProfileData("Juan", "Dela Cruz", "juan@email.com", "123", "Manila")
+    val data = UserProfileData("Raiden", "Villapando", "raiden@email.com", "123", "Manila")
     
     CitySyncTheme {
-        MainProfileView(data, {}, {}, {}, {}, {}, {}, blue, bg, dark, muted, timestamp, red, emailMuted)
+        MainProfileView(data, {}, {}, {}, {}, {}, {}, {}, blue, bg, dark, muted, timestamp, red, emailMuted)
     }
 }

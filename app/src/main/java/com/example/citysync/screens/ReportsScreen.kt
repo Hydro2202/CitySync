@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.CitySyncTheme
 
 @Preview(showBackground = true, widthDp = 360)
@@ -266,7 +268,15 @@ fun ReportsScreen(
                     }
                 }
             },
-            bottomBar = { ReportsBottomNavBar(onBack, onNavigateToCommunity, onNavigateToNotifications, onNavigateToProfile) }
+            bottomBar = {
+                StandardBottomNavBar(
+                    selectedTab = NavTab.REPORTS,
+                    onNavigateToHome = onBack,
+                    onNavigateToCommunity = onNavigateToCommunity,
+                    onNavigateToNotifications = onNavigateToNotifications,
+                    onNavigateToProfile = onNavigateToProfile
+                )
+            }
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier
@@ -392,76 +402,7 @@ fun ReportCard(report: ReportData) {
     }
 }
 
-@Composable
-fun ReportsBottomNavBar(
-    onBack: () -> Unit = {},
-    onNavigateToCommunity: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
-) {
-    val items = listOf(
-        NavigationItem("Home", Icons.Outlined.Home, false),
-        NavigationItem("Reports", Icons.Outlined.Description, true),
-        NavigationItem("Community", Icons.Outlined.Groups, false),
-        NavigationItem("Alerts", Icons.Outlined.Notifications, false),
-        NavigationItem("Profile", Icons.Outlined.AccountCircle, false)
-    )
-
-    Surface(
-        color = Color.White,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column {
-            HorizontalDivider(color = BorderSlate100, thickness = 1.dp)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                items.forEach { item ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { 
-                                if (item.label == "Home") onBack()
-                                if (item.label == "Community") onNavigateToCommunity()
-                                if (item.label == "Alerts") onNavigateToNotifications()
-                                if (item.label == "Profile") onNavigateToProfile()
-                            }
-                    ) {
-                        // Active Indicator
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(2.dp)
-                                .background(if (item.selected) BrandBlue else Color.Transparent)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Icon(
-                            item.icon,
-                            contentDescription = item.label,
-                            tint = if (item.selected) BrandBlue else Color(0xFFA0AEC0),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(4.dp))
-                        
-                        Text(
-                            item.label,
-                            fontSize = 10.sp,
-                            color = if (item.selected) BrandBlue else Color(0xFFA0AEC0),
-                            fontWeight = if (item.selected) FontWeight.Medium else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of ReportsBottomNavBar
 
 data class ReportData(
     val title: String,

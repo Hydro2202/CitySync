@@ -62,6 +62,7 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(OffWhite)
+            .navigationBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (currentStep <= 5) {
@@ -132,6 +133,7 @@ fun WizardHeader(currentStep: Int, onBack: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(DeepNavy)
+            .statusBarsPadding()
     ) {
         Row(
             modifier = Modifier

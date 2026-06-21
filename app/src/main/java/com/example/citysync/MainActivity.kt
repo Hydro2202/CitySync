@@ -3,11 +3,18 @@ package com.example.citysync
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.unit.dp
 import com.example.citysync.screens.*
 import com.example.citysync.ui.theme.CitySyncTheme
 
@@ -16,12 +23,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CitySyncTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                StandardViewport {
                     var currentScreen by remember { mutableStateOf("splash") }
                     var selectedAnnouncementCategory by remember { mutableStateOf<String?>(null) }
+                    var shouldFocusComment by remember { mutableStateOf(false) }
 
                     when (currentScreen) {
                         "splash" -> {
@@ -56,7 +61,9 @@ class MainActivity : ComponentActivity() {
                                 selectedAnnouncementCategory = category
                                 currentScreen = "announcements"
                             },
-                            onNavigateToEmergency = { currentScreen = "emergency" }
+                            onNavigateToEmergency = { 
+                                currentScreen = "emergency" 
+                            }
                         )
                         "reports" -> ReportsScreen(
                             onBack = { currentScreen = "dashboard" },
@@ -72,6 +79,32 @@ class MainActivity : ComponentActivity() {
                         "community" -> CommunityFeedScreen(
                             onBack = { currentScreen = "dashboard" },
                             onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToNotifications = { currentScreen = "notifications" },
+                            onNavigateToProfile = { currentScreen = "profile" },
+                            onNavigateToReportDetails = { 
+                                shouldFocusComment = false
+                                currentScreen = "report_details" 
+                            },
+                            onCommentClick = {
+                                shouldFocusComment = true
+                                currentScreen = "report_details"
+                            }
+                        )
+                        "report_details" -> ReportDetailsScreen(
+                            initialFocusComment = shouldFocusComment,
+                            onBack = { currentScreen = "community" },
+                            onTrackStatus = { currentScreen = "track_report" },
+                            onNavigateToHome = { currentScreen = "dashboard" },
+                            onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToCommunity = { currentScreen = "community" },
+                            onNavigateToNotifications = { currentScreen = "notifications" },
+                            onNavigateToProfile = { currentScreen = "profile" }
+                        )
+                        "track_report" -> TrackReportScreen(
+                            onBack = { currentScreen = "report_details" },
+                            onNavigateToHome = { currentScreen = "dashboard" },
+                            onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToCommunity = { currentScreen = "community" },
                             onNavigateToNotifications = { currentScreen = "notifications" },
                             onNavigateToProfile = { currentScreen = "profile" }
                         )
@@ -97,10 +130,42 @@ class MainActivity : ComponentActivity() {
                             onLogout = { currentScreen = "signin" }
                         )
                         "emergency" -> EmergencyFlow(
-                            onBack = { currentScreen = "dashboard" }
+                            onBack = { currentScreen = "dashboard" },
+                            onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToCommunity = { currentScreen = "community" },
+                            onNavigateToNotifications = { currentScreen = "notifications" },
+                            onNavigateToProfile = { currentScreen = "profile" }
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Enforces absolute viewport consistency across all application views.
+ * Every screen is wrapped in a rigid, uniform container constrained to a standard max-width.
+ */
+@Composable
+fun StandardViewport(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFE5E7EB)), // Neutral outer background (Slate-200)
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth() // Enforce w-full within the max-width
+                .fillMaxHeight()
+                .shadow(elevation = 16.dp, shape = RectangleShape),
+            color = Color(0xFFF4F6F9), // Standardized application background
+            shape = RectangleShape
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                content()
             }
         }
     }

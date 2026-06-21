@@ -52,10 +52,10 @@ object DesignTokens {
     val OnboardingButtonArrowGap = 8.dp
 
     // ── Sign In logo ────────────────────────────────────────────────────────
-    val SignInLogoSize = 260.dp
+    val SignInLogoSize = 100.dp
     val SignInLogoCorner = 12.dp
     val SignInLogoBorder = 1.dp
-    val SignInLogoInnerPadding = 6.dp
+    val SignInLogoInnerPadding = 0.dp
     val SignInLogoBottomGap = 16.dp
     val SignInTitleSize = 24.sp
     val SignInSubtitleSize = 14.sp
@@ -77,7 +77,7 @@ object DesignTokens {
     val AuthLinkSize = 13.sp
 
     // ── Sign Up ─────────────────────────────────────────────────────────────
-    val SignUpHeaderLogoSize = 260.dp
+    val SignUpHeaderLogoSize = 100.dp
     val SignUpHeaderLogoBottomGap = 16.dp
     val SignUpTitleSize = 24.sp
     val SignUpSubtitleSize = 14.sp

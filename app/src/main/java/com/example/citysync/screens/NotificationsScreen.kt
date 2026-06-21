@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 
 enum class NotificationType {
@@ -107,7 +109,15 @@ fun NotificationsScreen(
                 )
             }
         },
-        bottomBar = { NotificationsBottomNavBar(NotifBlueLocal, NotifTextMutedLocal, onBack, onNavigateToReports, onNavigateToCommunity, onNavigateToProfile) }
+        bottomBar = {
+            StandardBottomNavBar(
+                selectedTab = NavTab.ALERTS,
+                onNavigateToHome = onBack,
+                onNavigateToReports = onNavigateToReports,
+                onNavigateToCommunity = onNavigateToCommunity,
+                onNavigateToProfile = onNavigateToProfile
+            )
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -383,71 +393,7 @@ fun NotificationIconBadge(type: NotificationType) {
     }
 }
 
-@Composable
-fun NotificationsBottomNavBar(
-    blueColor: Color,
-    textMuted: Color,
-    onHomeClick: () -> Unit = {},
-    onReportsClick: () -> Unit = {},
-    onCommunityClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
-) {
-    val items = listOf(
-        Triple("Home", Icons.Outlined.Home, false),
-        Triple("Reports", Icons.Outlined.Description, false),
-        Triple("Community", Icons.Outlined.Groups, false),
-        Triple("Alerts", Icons.Default.Notifications, true),
-        Triple("Profile", Icons.Outlined.AccountCircle, false)
-    )
-
-    Surface(color = Color.White, shadowElevation = 16.dp) {
-        Row(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            items.forEach { (label, icon, selected) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clickable { 
-                            if (label == "Home") onHomeClick()
-                            if (label == "Reports") onReportsClick()
-                            if (label == "Community") onCommunityClick()
-                            if (label == "Profile") onProfileClick()
-                        }
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(
-                                if (selected) blueColor else Color.Transparent,
-                                RoundedCornerShape(2.dp)
-                            )
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Icon(
-                        icon,
-                        contentDescription = label,
-                        tint = if (selected) blueColor else textMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        label,
-                        fontSize = 12.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) blueColor else textMuted
-                    )
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of NotificationsBottomNavBar
 
 
 @Preview(showBackground = true)

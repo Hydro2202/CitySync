@@ -54,14 +54,14 @@ fun SignInScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color.Transparent)
             .padding(horizontal = DesignTokens.ScreenPaddingHorizontal),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(top = 64.dp) // Generous top padding
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -217,7 +217,7 @@ fun ForgotPasswordScreen(onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color.Transparent)
             .statusBarsPadding()
             .padding(horizontal = DesignTokens.ScreenPaddingHorizontal)
     ) {
@@ -304,7 +304,7 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color.Transparent)
             .padding(DesignTokens.ScreenPaddingHorizontal)
             .verticalScroll(rememberScrollState())
     ) {
@@ -354,7 +354,7 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                     AuthOutlinedField(
                         value = firstName,
                         onValueChange = { firstName = it },
-                        placeholder = "Juan",
+                        placeholder = "Raiden",
                         leadingIcon = { Icon(Icons.Outlined.Person, null, tint = TextMuted, modifier = Modifier.size(DesignTokens.AuthFieldIconSize)) }
                     )
                 }
@@ -363,7 +363,7 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                     AuthOutlinedField(
                         value = lastName,
                         onValueChange = { lastName = it },
-                        placeholder = "Dela Cruz"
+                        placeholder = "Villapando"
                     )
                 }
             }
@@ -372,7 +372,7 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
             AuthOutlinedField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = "juan@example.com",
+                placeholder = "raiden@example.com",
                 leadingIcon = { Icon(Icons.Outlined.Email, null, tint = TextMuted, modifier = Modifier.size(DesignTokens.AuthFieldIconSize)) }
             )
 

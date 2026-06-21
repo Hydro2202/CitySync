@@ -61,27 +61,23 @@ fun CitySyncLogoHeader(modifier: Modifier = Modifier) {
     )
 }
 
-/** Sign In — centered logo in white badge. */
+/** Sign In — centered logo. */
 @Composable
 fun CitySyncLogoSignIn(modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(DesignTokens.SignInLogoCorner)
-    Box(
+    CitySyncLogo(
         modifier = modifier
             .size(DesignTokens.SignInLogoSize)
-            .clip(shape)
-            .background(Color.White, shape)
             .padding(DesignTokens.SignInLogoInnerPadding),
-        contentAlignment = Alignment.Center
-    ) {
-        CitySyncLogo(modifier = Modifier.fillMaxSize())
-    }
+        contentScale = ContentScale.Fit
+    )
 }
 
 /** Sign Up header logo. */
 @Composable
 fun CitySyncLogoSignUp(modifier: Modifier = Modifier) {
     CitySyncLogo(
-        modifier = modifier.size(DesignTokens.SignUpHeaderLogoSize)
+        modifier = modifier.size(DesignTokens.SignUpHeaderLogoSize),
+        contentScale = ContentScale.Fit
     )
 }
 

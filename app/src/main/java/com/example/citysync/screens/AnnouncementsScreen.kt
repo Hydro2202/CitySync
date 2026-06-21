@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.ui.components.NavTab
+import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 
 @Composable
@@ -133,9 +135,14 @@ fun AnnouncementsScreen(
             }
         },
         bottomBar = {
-            // Reusing a bottom nav template but making sure Home (Dashboard) context is clear or neutral
-            // For this view, we'll keep the standard 5-tab nav
-            AnnouncementsBottomNavBar(onBack, onNavigateToReports, onNavigateToCommunity, onNavigateToNotifications, onNavigateToProfile)
+            StandardBottomNavBar(
+                selectedTab = NavTab.HOME,
+                onNavigateToHome = onBack,
+                onNavigateToReports = onNavigateToReports,
+                onNavigateToCommunity = onNavigateToCommunity,
+                onNavigateToNotifications = onNavigateToNotifications,
+                onNavigateToProfile = onNavigateToProfile
+            )
         }
     ) { innerPadding ->
         LazyColumn(
@@ -425,74 +432,7 @@ fun AnnouncementCard(announcement: AnnouncementData) {
     }
 }
 
-@Composable
-fun AnnouncementsBottomNavBar(
-    onHomeClick: () -> Unit = {},
-    onReportsClick: () -> Unit = {},
-    onCommunityClick: () -> Unit = {},
-    onAlertsClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
-) {
-    // Announcements is reached from Home, so we keep Home active
-    val items = listOf(
-        Triple("Home", Icons.Default.Home, true),
-        Triple("Reports", Icons.Outlined.Description, false),
-        Triple("Community", Icons.Outlined.Groups, false),
-        Triple("Alerts", Icons.Outlined.Notifications, false),
-        Triple("Profile", Icons.Outlined.AccountCircle, false)
-    )
-
-    Surface(color = Color.White, shadowElevation = 16.dp) {
-        Row(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            items.forEach { (label, icon, selected) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clickable { 
-                            when (label) {
-                                "Home" -> onHomeClick()
-                                "Reports" -> onReportsClick()
-                                "Community" -> onCommunityClick()
-                                "Alerts" -> onAlertsClick()
-                                "Profile" -> onProfileClick()
-                            }
-                        }
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(
-                                if (selected) NotifBlue else Color.Transparent,
-                                RoundedCornerShape(2.dp)
-                            )
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Icon(
-                        icon,
-                        contentDescription = label,
-                        tint = if (selected) NotifBlue else NotifTextMuted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        label,
-                        fontSize = 12.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) NotifBlue else NotifTextMuted
-                    )
-                }
-            }
-        }
-    }
-}
+// StandardBottomNavBar used instead of AnnouncementsBottomNavBar
 
 data class AnnouncementData(
     val id: Int,
