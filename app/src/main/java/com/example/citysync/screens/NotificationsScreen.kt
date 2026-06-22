@@ -52,7 +52,8 @@ fun NotificationsScreen(
     onBack: () -> Unit = {},
     onNavigateToReports: () -> Unit = {},
     onNavigateToCommunity: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val NotifBlueLocal = Color(0xFF0D4E89)
     val NotifBgLocal = Color(0xFFF4F6F9)
@@ -89,7 +90,7 @@ fun NotificationsScreen(
         containerColor = NotifBgLocal,
         topBar = {
             Column {
-                NotificationHeader(NotifBlueLocal)
+                NotificationHeader(NotifBlueLocal, onSettingsClick = onNavigateToSettings)
                 NotificationSubHeader(
                     unreadCount = unreadCount,
                     onMarkAllRead = {
@@ -163,7 +164,7 @@ fun NotificationsScreen(
 }
 
 @Composable
-fun NotificationHeader(bgColor: Color) {
+fun NotificationHeader(bgColor: Color, onSettingsClick: () -> Unit = {}) {
     Surface(
         color = bgColor,
         modifier = Modifier.fillMaxWidth()
@@ -181,7 +182,7 @@ fun NotificationHeader(bgColor: Color) {
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = { /* Settings */ }) {
+            IconButton(onClick = onSettingsClick) {
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "Settings",

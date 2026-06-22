@@ -1,7 +1,6 @@
 package com.example.citysync.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -9,9 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun CommunityFeedScreen(
@@ -36,10 +35,14 @@ fun CommunityFeedScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToReportDetails: (String) -> Unit = {},
-    onCommentClick: (String) -> Unit = {}
+    onCommentClick: (String) -> Unit = {},
+    onContactSupport: () -> Unit = {}
 ) {
-    var selectedFilter by remember { mutableStateOf("All Reports") }
-    
+    var selectedFilter by remember { mutableStateOf("All") }
+    var openMenuId by remember { mutableStateOf<Int?>(null) }
+    var toastMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
     val posts = remember {
         mutableStateListOf(
             PostData(
@@ -58,7 +61,8 @@ fun CommunityFeedScreen(
                 statusBg = Color(0xFFFFF3E0),
                 likes = 24,
                 commentsCount = 8,
-                isHot = true
+                isHot = true,
+                isTrending = true
             ),
             PostData(
                 id = 2,
@@ -75,96 +79,119 @@ fun CommunityFeedScreen(
                 statusColor = Color(0xFF8E24AA),
                 statusBg = Color(0xFFF3E5F5),
                 likes = 15,
-                commentsCount = 3
+                commentsCount = 3,
+                isNearby = true
             )
         )
     }
 
-    val filteredPosts = remember(selectedFilter) {
+    val filteredPosts = remember(selectedFilter, posts.toList()) {
         when (selectedFilter) {
-            "Trending" -> posts.sortedByDescending { it.likes + it.commentsCount }
-            "Nearby" -> posts // Mock logic
+            "Trending" -> posts.filter { it.isTrending || it.likes > 20 }
+            "Nearby" -> posts.filter { it.isNearby }
             else -> posts
         }
     }
 
-    Scaffold(
-        containerColor = Color(0xFFF4F6F9),
-        topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(DeepNavy)
-                    .statusBarsPadding()
-                    .padding(vertical = 24.dp, horizontal = 20.dp)
-            ) {
-                Text(
-                    text = "Community Feed",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+    fun handleShare(post: PostData) {
+        toastMessage = "Link copied to clipboard!"
+        scope.launch {
+            delay(2000)
+            toastMessage = null
+        }
+    }
+
+    fun showToast(message: String) {
+        toastMessage = message
+        scope.launch {
+            delay(2000)
+            toastMessage = null
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = Color(0xFFF4F6F9),
+            topBar = {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(DeepNavy)
+                            .statusBarsPadding()
+                            .padding(vertical = 24.dp, horizontal = 20.dp)
+                    ) {
+                        Text(
+                            text = "Community Feed",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(vertical = 16.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterPill(
+                                label = "All Reports",
+                                isActive = selectedFilter == "All",
+                                onClick = { selectedFilter = "All" }
+                            )
+                        }
+                        item {
+                            FilterPill(
+                                label = "Trending",
+                                isActive = selectedFilter == "Trending",
+                                icon = Icons.Default.TrendingUp,
+                                onClick = { selectedFilter = "Trending" }
+                            )
+                        }
+                        item {
+                            FilterPill(
+                                label = "Nearby",
+                                isActive = selectedFilter == "Nearby",
+                                onClick = { selectedFilter = "Nearby" }
+                            )
+                        }
+                    }
+                }
+            },
+            bottomBar = {
+                StandardBottomNavBar(
+                    selectedTab = NavTab.COMMUNITY,
+                    onNavigateToHome = onBack,
+                    onNavigateToReports = onNavigateToReports,
+                    onNavigateToNotifications = onNavigateToNotifications,
+                    onNavigateToProfile = onNavigateToProfile
                 )
             }
-        },
-        bottomBar = {
-            StandardBottomNavBar(
-                selectedTab = NavTab.COMMUNITY,
-                onNavigateToHome = onBack,
-                onNavigateToReports = onNavigateToReports,
-                onNavigateToNotifications = onNavigateToNotifications,
-                onNavigateToProfile = onNavigateToProfile
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Filter Row
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                contentPadding = PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    FilterPill(
-                        label = "All Reports",
-                        isActive = selectedFilter == "All Reports",
-                        onClick = { selectedFilter = "All Reports" }
-                    )
-                }
-                item {
-                    FilterPill(
-                        label = "Trending",
-                        isActive = selectedFilter == "Trending",
-                        icon = Icons.Default.TrendingUp,
-                        onClick = { selectedFilter = "Trending" }
-                    )
-                }
-                item {
-                    FilterPill(
-                        label = "Nearby",
-                        isActive = selectedFilter == "Nearby",
-                        onClick = { selectedFilter = "Nearby" }
-                    )
-                }
-            }
-
-            // Feed
+        ) { innerPadding ->
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(filteredPosts, key = { it.id }) { post ->
-                    CommunityPostCard(
-                        post = post,
-                        onClick = { onNavigateToReportDetails("REP-2026-00123${post.id}") },
-                        onCommentIconClick = { onCommentClick("REP-2026-00123${post.id}") },
-                        onLikeClick = {
+                        CommunityPostCard(
+                            post = post,
+                            isMenuOpen = openMenuId == post.id,
+                            onMenuToggle = { openMenuId = if (openMenuId == post.id) null else post.id },
+                            onMenuDismiss = { openMenuId = null },
+                            onClick = { onNavigateToReportDetails("REP-2026-00123${post.id}") },
+                            onCommentIconClick = { onCommentClick("REP-2026-00123${post.id}") },
+                            onShare = { handleShare(post) },
+                            onSave = { showToast("Post saved successfully!") },
+                            onReport = { showToast("Post reported for review.") },
+                            onContactSupport = onContactSupport,
+                            onLikeClick = {
                             val index = posts.indexOfFirst { it.id == post.id }
                             if (index != -1) {
                                 val currentPost = posts[index]
@@ -179,26 +206,52 @@ fun CommunityFeedScreen(
                 }
             }
         }
+
+        toastMessage?.let { msg ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 100.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(
+                    color = Color(0xFF1F2937),
+                    shape = RoundedCornerShape(24.dp),
+                    shadowElevation = 8.dp
+                ) {
+                    Text(
+                        text = msg,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 fun CommunityPostCard(
     post: PostData,
+    isMenuOpen: Boolean,
+    onMenuToggle: () -> Unit,
+    onMenuDismiss: () -> Unit,
     onClick: () -> Unit = {},
     onCommentIconClick: () -> Unit = {},
+    onShare: () -> Unit = {},
+    onSave: () -> Unit = {},
+    onReport: () -> Unit = {},
+    onContactSupport: () -> Unit = {},
     onLikeClick: () -> Unit = {}
 ) {
-    var showComments by remember { mutableStateOf(false) }
-
     Surface(
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9)),
+        border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -253,17 +306,53 @@ fun CommunityPostCard(
                     }
                 }
                 
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = "Options",
-                    tint = Color(0xFF7A8B9C),
-                    modifier = Modifier.size(20.dp)
-                )
+                Box {
+                    IconButton(
+                        onClick = onMenuToggle,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = Color(0xFF7A8B9C),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = isMenuOpen,
+                        onDismissRequest = onMenuDismiss,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .width(180.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Share Post", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            leadingIcon = { Icon(Icons.Default.Share, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+                            onClick = { onShare(); onMenuDismiss() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Save", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            leadingIcon = { Icon(Icons.Default.BookmarkBorder, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+                            onClick = { onSave(); onMenuDismiss() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Report Post", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            leadingIcon = { Icon(Icons.Default.Flag, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+                            onClick = { onReport(); onMenuDismiss() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Contact Support", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            leadingIcon = { Icon(Icons.Default.HeadsetMic, null, tint = Color.Gray, modifier = Modifier.size(20.dp)) },
+                            onClick = { onContactSupport(); onMenuDismiss() }
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Content
             Text(
                 post.title,
                 fontWeight = FontWeight.Bold,
@@ -280,7 +369,6 @@ fun CommunityPostCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tags
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
                     color = Color(0xFFF1F3F5),
@@ -309,7 +397,6 @@ fun CommunityPostCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Media Placeholder
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -326,9 +413,7 @@ fun CommunityPostCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer / Interactions
+            Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
@@ -370,10 +455,10 @@ fun CommunityPostCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { /* Share */ }
+                    modifier = Modifier.clickable { onShare() }
                 ) {
                     Icon(
-                        Icons.Outlined.Share,
+                        Icons.Default.Share,
                         contentDescription = "Share",
                         tint = Color(0xFF7A8B9C),
                         modifier = Modifier.size(20.dp)
@@ -382,78 +467,9 @@ fun CommunityPostCard(
                     Text("Share", color = Color(0xFF7A8B9C), fontSize = 14.sp)
                 }
             }
-
-            if (showComments) {
-                CommentDrawer(onDismiss = { showComments = false })
-            }
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CommentDrawer(onDismiss: () -> Unit) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-                .padding(bottom = 32.dp)
-        ) {
-            Text("Comments", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Dummy comments
-            CommentItem("Raiden Villapando", "This is very dangerous indeed! Hope it gets fixed soon.", "1h ago")
-            Spacer(modifier = Modifier.height(12.dp))
-            CommentItem("Ana Reyes", "I passed by earlier and it was still broken.", "30m ago")
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                placeholder = { Text("Add a comment...", color = Color.Gray) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Outlined.Send, contentDescription = "Send", tint = DeepNavy)
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun CommentItem(name: String, comment: String, time: String) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(Color(0xFFF1F3F5), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(name.first().toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(time, fontSize = 11.sp, color = Color.Gray)
-            }
-            Text(comment, fontSize = 13.sp, color = Color.DarkGray)
-        }
-    }
-}
-
-// StandardBottomNavBar used instead of CommunityBottomNavBar
 
 data class PostData(
     val id: Int,
@@ -472,7 +488,9 @@ data class PostData(
     val likes: Int,
     val commentsCount: Int,
     val isHot: Boolean = false,
-    val isLiked: Boolean = false
+    val isLiked: Boolean = false,
+    val isTrending: Boolean = false,
+    val isNearby: Boolean = false
 )
 
 @Composable
@@ -512,4 +530,3 @@ fun CommunityFeedScreenPreview() {
         CommunityFeedScreen()
     }
 }
-

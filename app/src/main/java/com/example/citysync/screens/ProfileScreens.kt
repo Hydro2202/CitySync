@@ -55,7 +55,8 @@ fun ProfileFlow(
     onNavigateToReports: () -> Unit = {},
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    initialSubView: ProfileSubView = ProfileSubView.MAIN
 ) {
     val NotifBlueLocal = Color(0xFF0D4E89)
     val NotifBgLocal = Color(0xFFF4F6F9)
@@ -66,7 +67,7 @@ fun ProfileFlow(
     val ProfileHelpBgLocal = Color(0xFFEBF8FF)
     val ProfileEmailMutedLocal = Color(0xFF7A8B9C)
 
-    var currentSubView by remember { mutableStateOf(ProfileSubView.MAIN) }
+    var currentSubView by remember { mutableStateOf(initialSubView) }
     var userData by remember { 
         mutableStateOf(UserProfileData(
             firstName = "Raiden",

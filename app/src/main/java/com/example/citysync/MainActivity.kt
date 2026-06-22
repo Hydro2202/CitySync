@@ -88,7 +88,8 @@ class MainActivity : ComponentActivity() {
                             onCommentClick = {
                                 shouldFocusComment = true
                                 currentScreen = "report_details"
-                            }
+                            },
+                            onContactSupport = { currentScreen = "contact_support" }
                         )
                         "report_details" -> ReportDetailsScreen(
                             initialFocusComment = shouldFocusComment,
@@ -98,10 +99,19 @@ class MainActivity : ComponentActivity() {
                             onNavigateToReports = { currentScreen = "reports" },
                             onNavigateToCommunity = { currentScreen = "community" },
                             onNavigateToNotifications = { currentScreen = "notifications" },
-                            onNavigateToProfile = { currentScreen = "profile" }
+                            onNavigateToProfile = { currentScreen = "profile" },
+                            onContactSupport = { currentScreen = "contact_support" }
                         )
                         "track_report" -> TrackReportScreen(
                             onBack = { currentScreen = "report_details" },
+                            onNavigateToHome = { currentScreen = "dashboard" },
+                            onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToCommunity = { currentScreen = "community" },
+                            onNavigateToNotifications = { currentScreen = "notifications" },
+                            onNavigateToProfile = { currentScreen = "profile" }
+                        )
+                        "contact_support" -> ContactSupportScreen(
+                            onBack = { currentScreen = "dashboard" }, // Simple back to dash or use a history stack
                             onNavigateToHome = { currentScreen = "dashboard" },
                             onNavigateToReports = { currentScreen = "reports" },
                             onNavigateToCommunity = { currentScreen = "community" },
@@ -112,7 +122,16 @@ class MainActivity : ComponentActivity() {
                             onBack = { currentScreen = "dashboard" },
                             onNavigateToReports = { currentScreen = "reports" },
                             onNavigateToCommunity = { currentScreen = "community" },
-                            onNavigateToProfile = { currentScreen = "profile" }
+                            onNavigateToProfile = { currentScreen = "profile" },
+                            onNavigateToSettings = { currentScreen = "settings" }
+                        )
+                        "settings" -> ProfileFlow(
+                            onBack = { currentScreen = "notifications" },
+                            onNavigateToReports = { currentScreen = "reports" },
+                            onNavigateToCommunity = { currentScreen = "community" },
+                            onNavigateToNotifications = { currentScreen = "notifications" },
+                            onLogout = { currentScreen = "signin" },
+                            initialSubView = ProfileSubView.SETTINGS
                         )
                         "announcements" -> AnnouncementsScreen(
                             initialCategory = selectedAnnouncementCategory,
