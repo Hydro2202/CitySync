@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,14 @@ import com.example.citysync.ui.theme.*
 fun SignInScreenPreview() {
     CitySyncTheme {
         SignInScreen(onSignInSuccess = {}, onNavigateToSignUp = {}, onNavigateToForgotPassword = {})
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun ForgotPasswordScreenPreview() {
+    CitySyncTheme {
+        ForgotPasswordScreen(onBack = {})
     }
 }
 
@@ -213,6 +222,7 @@ fun SignInScreen(
 fun ForgotPasswordScreen(onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     var email by rememberSaveable { mutableStateOf("") }
+    var isLinkSent by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -245,42 +255,98 @@ fun ForgotPasswordScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Medium
             )
         }
-        Spacer(modifier = Modifier.height(DesignTokens.ForgotTitleTopGap))
-        Text(
-            "Forgot Password?",
-            fontSize = DesignTokens.ForgotTitleSize,
-            fontWeight = FontWeight.Bold,
-            color = TextDark,
-            lineHeight = 32.sp
-        )
-        Spacer(modifier = Modifier.height(DesignTokens.ForgotDescTopGap))
-        Text(
-            "Enter your registered email and we'll send you a link to reset your password.",
-            color = TextMuted,
-            fontSize = DesignTokens.ForgotDescSize,
-            lineHeight = DesignTokens.ForgotDescLineHeight,
-            fontWeight = FontWeight.Normal
-        )
 
-        Spacer(modifier = Modifier.height(DesignTokens.ForgotFormTopGap))
-        AuthLabel("Email Address")
-        AuthOutlinedField(
-            value = email,
-            onValueChange = { email = it },
-            placeholder = "Enter your email",
-            leadingIcon = { Icon(Icons.Outlined.Email, null, tint = TextMuted, modifier = Modifier.size(DesignTokens.AuthFieldIconSize)) }
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(DesignTokens.AuthButtonHeight),
-            colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
-            shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Text("Send Reset Link", fontSize = DesignTokens.AuthButtonTextSize, fontWeight = FontWeight.SemiBold, color = Color.White)
+        if (!isLinkSent) {
+            Spacer(modifier = Modifier.height(DesignTokens.ForgotTitleTopGap))
+            Text(
+                "Forgot Password?",
+                fontSize = DesignTokens.ForgotTitleSize,
+                fontWeight = FontWeight.Bold,
+                color = TextDark,
+                lineHeight = 32.sp
+            )
+            Spacer(modifier = Modifier.height(DesignTokens.ForgotDescTopGap))
+            Text(
+                "Enter your registered email and we'll send you a link to reset your password.",
+                color = TextMuted,
+                fontSize = DesignTokens.ForgotDescSize,
+                lineHeight = DesignTokens.ForgotDescLineHeight,
+                fontWeight = FontWeight.Normal
+            )
+
+            Spacer(modifier = Modifier.height(DesignTokens.ForgotFormTopGap))
+            AuthLabel("Email Address")
+            AuthOutlinedField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = "Enter your email",
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Email,
+                        null,
+                        tint = TextMuted,
+                        modifier = Modifier.size(DesignTokens.AuthFieldIconSize)
+                    )
+                }
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { if (email.isNotBlank()) isLinkSent = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(DesignTokens.AuthButtonHeight),
+                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    "Send Reset Link",
+                    fontSize = DesignTokens.AuthButtonTextSize,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.height(DesignTokens.ForgotTitleTopGap))
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(GreenTint, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = GreenDark,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "Reset Link Sent!",
+                fontSize = DesignTokens.ForgotTitleSize,
+                fontWeight = FontWeight.Bold,
+                color = TextDark
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                "We've sent a password reset link to $email. Please check your inbox and follow the instructions to reset your password.",
+                color = TextMuted,
+                fontSize = DesignTokens.ForgotDescSize,
+                lineHeight = DesignTokens.ForgotDescLineHeight,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = onBack,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(DesignTokens.AuthButtonHeight),
+                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                shape = RoundedCornerShape(DesignTokens.AuthButtonCorner)
+            ) {
+                Text("Back to Sign In", color = Color.White, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }

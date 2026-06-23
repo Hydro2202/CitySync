@@ -1,5 +1,9 @@
 package com.example.citysync.screens
 
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -33,7 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class ProfileSubView {
-    MAIN, EDIT, SETTINGS
+    MAIN, EDIT, SETTINGS, PRIVACY, SECURITY, HELP, CONTACT_SUPPORT, TERMS, PRIVACY_POLICY
 }
 
 data class UserProfileData(
@@ -49,6 +53,7 @@ data class UserProfileData(
     val pendingReports: String = "9"
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileFlow(
     onBack: () -> Unit = {},
@@ -67,6 +72,7 @@ fun ProfileFlow(
     val ProfileHelpBgLocal = Color(0xFFEBF8FF)
     val ProfileEmailMutedLocal = Color(0xFF7A8B9C)
 
+    val context = LocalContext.current
     var currentSubView by remember { mutableStateOf(initialSubView) }
     var userData by remember { 
         mutableStateOf(UserProfileData(
@@ -79,6 +85,9 @@ fun ProfileFlow(
     }
     
     var isSigningOut by remember { mutableStateOf(false) }
+    var showModal by remember { mutableStateOf(false) }
+    var selectedModalTitle by remember { mutableStateOf("") }
+    val modalSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -86,14 +95,8 @@ fun ProfileFlow(
         AnimatedContent(
             targetState = currentSubView,
             transitionSpec = {
-                val duration = 200
-                if (targetState == ProfileSubView.MAIN) {
-                    slideInHorizontally(animationSpec = tween(duration)) { -it } + fadeIn(animationSpec = tween(duration)) togetherWith 
-                    slideOutHorizontally(animationSpec = tween(duration)) { it } + fadeOut(animationSpec = tween(duration))
-                } else {
-                    slideInHorizontally(animationSpec = tween(duration)) { it } + fadeIn(animationSpec = tween(duration)) togetherWith 
-                    slideOutHorizontally(animationSpec = tween(duration)) { -it } + fadeOut(animationSpec = tween(duration))
-                }
+                // Instant transition by setting duration to 0
+                fadeIn(animationSpec = tween(0)) togetherWith fadeOut(animationSpec = tween(0))
             }, label = "ProfileViewTransition"
         ) { subView ->
             when (subView) {
@@ -105,6 +108,17 @@ fun ProfileFlow(
                     onNavigateToReports = onNavigateToReports,
                     onNavigateToCommunity = onNavigateToCommunity,
                     onNavigateToNotifications = onNavigateToNotifications,
+                    onShare = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "CitySync Profile")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Check out my CitySync profile! I've submitted ${userData.totalReports} reports and helped resolve ${userData.resolvedReports} issues. Download CitySync today!"
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Profile"))
+                    },
                     onSignOut = {
                         scope.launch {
                             isSigningOut = true
@@ -139,12 +153,45 @@ fun ProfileFlow(
                     userData = userData,
                     onBack = { currentSubView = ProfileSubView.MAIN },
                     onEditProfileClick = { currentSubView = ProfileSubView.EDIT },
+                    onNavigateToPrivacy = { currentSubView = ProfileSubView.PRIVACY },
+                    onNavigateToSecurity = { currentSubView = ProfileSubView.SECURITY },
+                    onNavigateToHelp = { currentSubView = ProfileSubView.HELP },
+                    onNavigateToContactSupport = { currentSubView = ProfileSubView.CONTACT_SUPPORT },
+                    onNavigateToTerms = { currentSubView = ProfileSubView.TERMS },
+                    onNavigateToPrivacyPolicy = { currentSubView = ProfileSubView.PRIVACY_POLICY },
+                    onShowModal = { title -> selectedModalTitle = title; showModal = true },
                     notifBlue = NotifBlueLocal,
                     notifBg = NotifBgLocal,
                     notifTextDark = NotifTextDarkLocal,
                     notifTextMuted = NotifTextMutedLocal,
                     helpBg = ProfileHelpBgLocal,
                     emailMuted = ProfileEmailMutedLocal
+                )
+                ProfileSubView.PRIVACY -> PrivacySettingsScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS },
+                    onAccountDeleted = onLogout
+                )
+                ProfileSubView.SECURITY -> SecuritySettingsScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS }
+                )
+                ProfileSubView.HELP -> HelpSupportScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS },
+                    onContactSupport = { currentSubView = ProfileSubView.CONTACT_SUPPORT }
+                )
+                ProfileSubView.CONTACT_SUPPORT -> ContactSupportScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS },
+                    onMessageSent = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Message sent successfully!")
+                            currentSubView = ProfileSubView.SETTINGS
+                        }
+                    }
+                )
+                ProfileSubView.TERMS -> TermsOfServiceScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS }
+                )
+                ProfileSubView.PRIVACY_POLICY -> PrivacyPolicyScreen(
+                    onBack = { currentSubView = ProfileSubView.SETTINGS }
                 )
             }
         }
@@ -153,6 +200,23 @@ fun ProfileFlow(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp)
         )
+
+        if (showModal) {
+            ModalBottomSheet(
+                onDismissRequest = { showModal = false },
+                sheetState = modalSheetState,
+                containerColor = Color.White,
+                dragHandle = { BottomSheetDefaults.DragHandle() }
+            ) {
+                SettingsModalContent(
+                    title = selectedModalTitle,
+                    onClose = { showModal = false },
+                    notifBlue = NotifBlueLocal,
+                    notifTextDark = NotifTextDarkLocal,
+                    notifTextMuted = NotifTextMutedLocal
+                )
+            }
+        }
 
         if (isSigningOut) {
             Box(
@@ -189,6 +253,7 @@ fun MainProfileView(
     onNavigateToReports: () -> Unit,
     onNavigateToCommunity: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onShare: () -> Unit,
     onSignOut: () -> Unit,
     notifBlue: Color,
     notifBg: Color,
@@ -198,9 +263,22 @@ fun MainProfileView(
     signOutRed: Color,
     emailMuted: Color
 ) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        // Handle image selection
+    }
+
     Scaffold(
         containerColor = notifBg,
-        topBar = { ProfileHeader("Profile", notifBlue, showShare = true) },
+        topBar = {
+            ProfileHeader(
+                title = "Profile",
+                bgColor = notifBlue,
+                showShare = true,
+                onShare = onShare
+            )
+        },
         bottomBar = { 
             StandardBottomNavBar(
                 selectedTab = NavTab.PROFILE,
@@ -228,7 +306,11 @@ fun MainProfileView(
                     Box(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             // Avatar Group
-                            Box(modifier = Modifier.size(80.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clickable { launcher.launch("image/*") }
+                            ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -375,6 +457,13 @@ fun EditProfileView(
     var email by remember { mutableStateOf(initialData.email) }
     var phone by remember { mutableStateOf(initialData.phone) }
     var address by remember { mutableStateOf(initialData.address) }
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        // In a real app, you would handle the URI and upload/persist it
+        // For this UI mockup, we'll just simulate a successful selection
+    }
 
     Scaffold(
         containerColor = notifBg,
@@ -390,7 +479,11 @@ fun EditProfileView(
             // Avatar Selection
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(modifier = Modifier.size(100.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clickable { launcher.launch("image/*") }
+                    ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -418,7 +511,7 @@ fun EditProfileView(
                         color = notifBlue,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.clickable { /* Change Photo */ }
+                        modifier = Modifier.clickable { launcher.launch("image/*") }
                     )
                 }
             }
@@ -469,6 +562,13 @@ fun SettingsView(
     userData: UserProfileData,
     onBack: () -> Unit,
     onEditProfileClick: () -> Unit,
+    onNavigateToPrivacy: () -> Unit,
+    onNavigateToSecurity: () -> Unit,
+    onNavigateToHelp: () -> Unit,
+    onNavigateToContactSupport: () -> Unit,
+    onNavigateToTerms: () -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onShowModal: (String) -> Unit,
     notifBlue: Color,
     notifBg: Color,
     notifTextDark: Color,
@@ -477,10 +577,6 @@ fun SettingsView(
     emailMuted: Color
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var selectedModalTitle by remember { mutableStateOf("") }
-    var showModal by remember { mutableStateOf(false) }
-    
-    val modalSheetState = rememberModalBottomSheetState()
 
     Scaffold(
         containerColor = notifBg,
@@ -550,22 +646,22 @@ fun SettingsView(
             // PRIVACY & SECURITY
             item {
                 SettingsSection("PRIVACY & SECURITY") {
-                    SettingsNavRow(Icons.Default.Lock, "Privacy Settings", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Privacy Settings"; showModal = true })
+                    SettingsNavRow(Icons.Default.Lock, "Privacy Settings", notifBlue, notifTextDark, onClick = onNavigateToPrivacy)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color(0xFFF1F5F9))
-                    SettingsNavRow(Icons.Default.Shield, "Security", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Security"; showModal = true })
+                    SettingsNavRow(Icons.Default.Shield, "Security", notifBlue, notifTextDark, onClick = onNavigateToSecurity)
                 }
             }
 
             // SUPPORT & LEGAL
             item {
                 SettingsSection("SUPPORT & LEGAL") {
-                    SettingsNavRow(Icons.Default.Help, "Help & Support", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Help & Support"; showModal = true })
+                    SettingsNavRow(Icons.Default.Help, "Help & Support", notifBlue, notifTextDark, onClick = onNavigateToHelp)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color(0xFFF1F5F9))
-                    SettingsNavRow(Icons.Default.ChatBubble, "Contact Support", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Contact Support"; showModal = true })
+                    SettingsNavRow(Icons.Default.ChatBubble, "Contact Support", notifBlue, notifTextDark, onClick = onNavigateToContactSupport)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color(0xFFF1F5F9))
-                    SettingsNavRow(Icons.Default.Description, "Terms of Service", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Terms of Service"; showModal = true })
+                    SettingsNavRow(Icons.Default.Description, "Terms of Service", notifBlue, notifTextDark, onClick = onNavigateToTerms)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Color(0xFFF1F5F9))
-                    SettingsNavRow(Icons.Default.GppGood, "Privacy Policy", notifBlue, notifTextDark, onClick = { selectedModalTitle = "Privacy Policy"; showModal = true })
+                    SettingsNavRow(Icons.Default.GppGood, "Privacy Policy", notifBlue, notifTextDark, onClick = onNavigateToPrivacyPolicy)
                 }
             }
 
@@ -598,7 +694,7 @@ fun SettingsView(
                         Text("Contact our support team for assistance.", fontSize = 13.sp, color = notifTextMuted)
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = { selectedModalTitle = "Contact Support"; showModal = true },
+                            onClick = onNavigateToContactSupport,
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = notifBlue),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -611,22 +707,6 @@ fun SettingsView(
             }
         }
         
-        if (showModal) {
-            ModalBottomSheet(
-                onDismissRequest = { showModal = false },
-                sheetState = modalSheetState,
-                containerColor = Color.White,
-                dragHandle = { BottomSheetDefaults.DragHandle() }
-            ) {
-                SettingsModalContent(
-                    title = selectedModalTitle,
-                    onClose = { showModal = false },
-                    notifBlue = notifBlue,
-                    notifTextDark = notifTextDark,
-                    notifTextMuted = notifTextMuted
-                )
-            }
-        }
     }
 }
 
@@ -702,10 +782,19 @@ fun LegalContentItem(header: String, body: String) {
 // ── Sub-components ──────────────────────────────────────────────────────────
 
 @Composable
-fun ProfileHeader(title: String, bgColor: Color, showBack: Boolean = false, showShare: Boolean = false, onBack: () -> Unit = {}) {
+fun ProfileHeader(
+    title: String,
+    bgColor: Color,
+    showBack: Boolean = false,
+    showShare: Boolean = false,
+    onBack: () -> Unit = {},
+    onShare: () -> Unit = {}
+) {
     Surface(color = bgColor, modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 16.dp),
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (showBack) {
@@ -718,9 +807,21 @@ fun ProfileHeader(title: String, bgColor: Color, showBack: Boolean = false, show
                 }
                 Spacer(modifier = Modifier.width(16.dp))
             }
-            Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(
+                title,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
             if (showShare) {
-                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
+                IconButton(onClick = onShare, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = "Share",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }
@@ -890,6 +991,23 @@ fun MainProfileViewPreview() {
     val data = UserProfileData("Raiden", "Villapando", "raiden@email.com", "123", "Manila")
     
     CitySyncTheme {
-        MainProfileView(data, {}, {}, {}, {}, {}, {}, {}, blue, bg, dark, muted, timestamp, red, emailMuted)
+        MainProfileView(
+            userData = data,
+            onBack = {},
+            onEditClick = {},
+            onSettingsClick = {},
+            onNavigateToReports = {},
+            onNavigateToCommunity = {},
+            onNavigateToNotifications = {},
+            onShare = {},
+            onSignOut = {},
+            notifBlue = blue,
+            notifBg = bg,
+            notifTextDark = dark,
+            notifTextMuted = muted,
+            notifTextTimestamp = timestamp,
+            signOutRed = red,
+            emailMuted = emailMuted
+        )
     }
 }

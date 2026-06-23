@@ -111,12 +111,7 @@ class MainActivity : ComponentActivity() {
                             onNavigateToProfile = { currentScreen = "profile" }
                         )
                         "contact_support" -> ContactSupportScreen(
-                            onBack = { currentScreen = "dashboard" }, // Simple back to dash or use a history stack
-                            onNavigateToHome = { currentScreen = "dashboard" },
-                            onNavigateToReports = { currentScreen = "reports" },
-                            onNavigateToCommunity = { currentScreen = "community" },
-                            onNavigateToNotifications = { currentScreen = "notifications" },
-                            onNavigateToProfile = { currentScreen = "profile" }
+                            onBack = { currentScreen = "dashboard" }
                         )
                         "notifications" -> NotificationsScreen(
                             onBack = { currentScreen = "dashboard" },

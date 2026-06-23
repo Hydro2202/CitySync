@@ -97,7 +97,7 @@ fun DashboardScreen(
                                     lineHeight = 20.sp
                                 )
                                 Text(
-                                    "Sdasd",
+                                    "Raiden",
                                     color = Color.White,
                                     fontSize = DesignTokens.DashboardNameSize,
                                     fontWeight = FontWeight.Bold,
@@ -106,6 +106,7 @@ fun DashboardScreen(
                             }
                         }
                         BadgedBox(
+                            modifier = Modifier.clickable { onNavigateToNotifications() },
                             badge = {
                                 Badge(
                                     containerColor = CrimsonRed,
