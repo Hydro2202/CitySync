@@ -29,25 +29,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.citysync.data.AuthManager
 import com.example.citysync.ui.components.CitySyncLogoSignIn
 import com.example.citysync.ui.components.CitySyncLogoSignUp
 import com.example.citysync.ui.theme.*
-
-@Preview(showBackground = true, widthDp = 360)
-@Composable
-fun SignInScreenPreview() {
-    CitySyncTheme {
-        SignInScreen(onSignInSuccess = {}, onNavigateToSignUp = {}, onNavigateToForgotPassword = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 360)
-@Composable
-fun ForgotPasswordScreenPreview() {
-    CitySyncTheme {
-        ForgotPasswordScreen(onBack = {})
-    }
-}
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignInScreen(
@@ -55,6 +41,11 @@ fun SignInScreen(
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit
 ) {
+    val authManager = remember { AuthManager() }
+    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     var emailOrPhone by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
@@ -91,11 +82,15 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(DesignTokens.SignInFormTopGap))
 
-            AuthLabel("Email or Phone Number")
+            if (errorMessage != null) {
+                Text(errorMessage!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+            }
+
+            AuthLabel("Email Address")
             AuthOutlinedField(
                 value = emailOrPhone,
                 onValueChange = { emailOrPhone = it },
-                placeholder = "Enter your email or phone",
+                placeholder = "Enter your email",
                 leadingIcon = { Icon(Icons.Outlined.Email, null, tint = TextMuted, modifier = Modifier.size(DesignTokens.AuthFieldIconSize)) }
             )
 
@@ -144,10 +139,23 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            val isSignInEnabled = emailOrPhone.isNotBlank() && password.isNotBlank()
+            val isSignInEnabled = emailOrPhone.isNotBlank() && password.isNotBlank() && !isLoading
 
             Button(
-                onClick = onSignInSuccess,
+                onClick = {
+                    isLoading = true
+                    errorMessage = null
+                    scope.launch {
+                        try {
+                            authManager.signIn(emailOrPhone, password)
+                            onSignInSuccess()
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "Authentication failed"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
                 enabled = isSignInEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,7 +167,11 @@ fun SignInScreen(
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {
-                Text("Sign In", fontSize = DesignTokens.AuthButtonTextSize, fontWeight = FontWeight.SemiBold, color = Color.White)
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text("Sign In", fontSize = DesignTokens.AuthButtonTextSize, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -363,6 +375,11 @@ fun ForgotPasswordScreen(onBack: () -> Unit) {
 
 @Composable
 fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Unit) {
+    val authManager = remember { AuthManager() }
+    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     var currentStep by rememberSaveable { mutableStateOf(1) }
 
     var firstName by rememberSaveable { mutableStateOf("") }
@@ -419,6 +436,10 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
             trackColor = Color(0xFFE0E0E0),
             strokeCap = StrokeCap.Round
         )
+
+        if (errorMessage != null) {
+            Text(errorMessage!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+        }
 
         if (currentStep == 1) {
             Row(
@@ -567,10 +588,23 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
             val isStep2Valid = createPassword.isNotBlank() && 
                                confirmPassword.isNotBlank() && 
                                createPassword == confirmPassword && 
-                               agreeToTerms
+                               agreeToTerms && !isLoading
 
             Button(
-                onClick = onSignUpComplete,
+                onClick = {
+                    isLoading = true
+                    errorMessage = null
+                    scope.launch {
+                        try {
+                            authManager.signUp(email, createPassword)
+                            onSignUpComplete()
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "Registration failed"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
                 enabled = isStep2Valid,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -582,7 +616,11 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {
-                Text("Create Account", color = Color.White, fontSize = DesignTokens.AuthButtonTextSize, fontWeight = FontWeight.SemiBold)
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text("Create Account", color = Color.White, fontSize = DesignTokens.AuthButtonTextSize, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
 

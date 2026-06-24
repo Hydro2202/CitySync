@@ -28,18 +28,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.citysync.data.AuthManager
+import com.example.citysync.data.model.Report
+import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.theme.*
-
-@Preview(showBackground = true, widthDp = 360)
-@Composable
-fun ReportWizardPreview() {
-    CitySyncTheme {
-        ReportWizardScreen(onBack = {}, onComplete = {})
-    }
-}
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
+    val authManager = remember { AuthManager() }
+    val repository = remember { ReportRepository() }
+    val scope = rememberCoroutineScope()
+    var isSubmitting by remember { mutableStateOf(false) }
+
     var currentStep by remember { mutableStateOf(1) }
     var photoAdded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
@@ -117,8 +118,29 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
                         description = description,
                         location = "$streetName, $barangay, $city",
                         landmark = landmark,
+                        isSubmitting = isSubmitting,
                         onBack = { currentStep = 4 },
-                        onSubmit = { currentStep = 6 }
+                        onSubmit = {
+                            isSubmitting = true
+                            scope.launch {
+                                try {
+                                    val userId = authManager.getCurrentUser()?.id
+                                    val newReport = Report(
+                                        userId = userId,
+                                        title = title,
+                                        location = "$streetName, $barangay, $city",
+                                        status = "Under Review",
+                                        tags = listOf(selectedCategory ?: "General")
+                                    )
+                                    repository.createReport(newReport)
+                                    currentStep = 6
+                                } catch (e: Exception) {
+                                    // Handle error
+                                } finally {
+                                    isSubmitting = false
+                                }
+                            }
+                        }
                     )
                     6 -> Step6Success(onComplete = onComplete)
                 }
@@ -234,7 +256,7 @@ fun Step1AddPhotos(photoAdded: Boolean, onPhotoAdded: (Boolean) -> Unit, onNext:
             ) {
                 // Placeholder for image
                 Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE2E8F0)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
                 }
                 
                 // Delete button
@@ -550,7 +572,11 @@ fun Step4LocationForm(
 }
 
 @Composable
-fun Step5Review(title: String, category: String, description: String, location: String, landmark: String, onBack: () -> Unit, onSubmit: () -> Unit) {
+fun Step5Review(
+    title: String, category: String, description: String, 
+    location: String, landmark: String, isSubmitting: Boolean,
+    onBack: () -> Unit, onSubmit: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -565,7 +591,7 @@ fun Step5Review(title: String, category: String, description: String, location: 
         // Media Preview
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(modifier = Modifier.size(80.dp).background(Color(0xFFE2E8F0), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Image, contentDescription = null, tint = Color.Gray)
+                Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray)
             }
         }
 
@@ -598,6 +624,7 @@ fun Step5Review(title: String, category: String, description: String, location: 
         Row(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             OutlinedButton(
                 onClick = onBack,
+                enabled = !isSubmitting,
                 modifier = Modifier.weight(1f).height(54.dp),
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -606,11 +633,16 @@ fun Step5Review(title: String, category: String, description: String, location: 
             }
             Button(
                 onClick = onSubmit,
+                enabled = !isSubmitting,
                 modifier = Modifier.weight(1f).height(54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Submit Report")
+                if (isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text("Submit Report")
+                }
             }
         }
     }
@@ -660,15 +692,11 @@ fun Step6Success(onComplete: () -> Unit) {
         
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Reference: ", color = Color(0xFF718096), fontSize = 14.sp)
-            Text("REP-2026-001235", color = TextDark, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text("REP-SUCCESS", color = TextDark, fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        Text("Redirecting to your report...", fontSize = 12.sp, color = Color(0xFFA0AEC0))
-        
-        // Auto-redirect or manual button
-        Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = onComplete,
             colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),

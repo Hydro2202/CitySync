@@ -64,14 +64,7 @@ fun NotificationsScreen(
     val NotifUnreadDotLocal = Color(0xFF007AFF)
 
     var notifications by remember {
-        mutableStateOf(
-            listOf(
-                NotificationItem(1, NotificationType.REPORT_UPDATE, "Report Update", "Your report #1024 has been marked as resolved by the city engineer.", "2 hours ago", false),
-                NotificationItem(2, NotificationType.GOVERNMENT_ANNOUNCEMENT, "Government Announcement", "Scheduled road maintenance on Main St. starting tomorrow 8 AM.", "5 hours ago", false),
-                NotificationItem(3, NotificationType.NEW_COMMENT, "New Comment", "John Doe commented on your report about the broken streetlight.", "1 day ago", true),
-                NotificationItem(4, NotificationType.COMMUNITY_ALERT, "Community Alert", "Heavy rainfall expected in your area. Please stay safe and alert.", "2 days ago", false)
-            )
-        )
+        mutableStateOf(emptyList<NotificationItem>())
     }
 
     var selectedFilter by remember { mutableStateOf("All") }
@@ -120,46 +113,84 @@ fun NotificationsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(filteredNotifications, key = { it.id }) { item ->
-                var isVisible by remember { mutableStateOf(true) }
-                
-                AnimatedVisibility(
-                    visible = isVisible,
-                    exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
-                ) {
-                    NotificationCard(
-                        item = item,
-                        onMarkAsRead = {
-                            notifications = notifications.map {
-                                if (it.id == item.id) it.copy(isRead = true) else it
-                            }
-                        },
-                        onDelete = {
-                            isVisible = false
-                        },
-                        NotifTextDarkLocal,
-                        NotifUnreadDotLocal,
-                        NotifTextMutedLocal,
-                        NotifTextTimestampLocal,
-                        NotifBlueLocal
-                    )
-                }
+        if (filteredNotifications.isEmpty()) {
+            EmptyNotificationsView(modifier = Modifier.padding(innerPadding))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(filteredNotifications, key = { it.id }) { item ->
+                    var isVisible by remember { mutableStateOf(true) }
+                    
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+                    ) {
+                        NotificationCard(
+                            item = item,
+                            onMarkAsRead = {
+                                notifications = notifications.map {
+                                    if (it.id == item.id) it.copy(isRead = true) else it
+                                }
+                            },
+                            onDelete = {
+                                isVisible = false
+                            },
+                            NotifTextDarkLocal,
+                            NotifUnreadDotLocal,
+                            NotifTextMutedLocal,
+                            NotifTextTimestampLocal,
+                            NotifBlueLocal
+                        )
+                    }
 
-                LaunchedEffect(isVisible) {
-                    if (!isVisible) {
-                        kotlinx.coroutines.delay(300)
-                        notifications = notifications.filter { it.id != item.id }
+                    LaunchedEffect(isVisible) {
+                        if (!isVisible) {
+                            kotlinx.coroutines.delay(300)
+                            notifications = notifications.filter { it.id != item.id }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EmptyNotificationsView(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.NotificationsNone,
+            contentDescription = null,
+            tint = Color(0xFFD1D9E0),
+            modifier = Modifier.size(80.dp)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "No notifications yet",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A202C),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "You'll receive updates about your reports and city announcements here.",
+            fontSize = 14.sp,
+            color = Color(0xFF5A6B7C),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            lineHeight = 20.sp
+        )
     }
 }
 

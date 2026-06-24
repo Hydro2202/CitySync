@@ -3,6 +3,7 @@ package com.example.citysync
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -10,15 +11,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
-import androidx.compose.material3.Surface
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.citysync.data.AuthManager
 import com.example.citysync.screens.*
 import com.example.citysync.ui.theme.CitySyncTheme
 import kotlinx.coroutines.delay
@@ -27,9 +25,14 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
-            CitySyncTheme {
-                StandardViewport {
+            CitySyncTheme(dynamicColor = false) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val authManager = remember { AuthManager() }
                     var currentScreen by remember { mutableStateOf("splash") }
                     var selectedAnnouncementCategory by remember { mutableStateOf<String?>(null) }
                     var shouldFocusComment by remember { mutableStateOf(false) }
@@ -39,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     fun showToast(message: String) {
                         toastMessage = message
                         scope.launch {
-                            kotlinx.coroutines.delay(2000)
+                            delay(2000)
                             toastMessage = null
                         }
                     }
@@ -49,8 +52,17 @@ class MainActivity : ComponentActivity() {
                             "splash" -> {
                                 SplashScreen()
                                 LaunchedEffect(Unit) {
-                                    kotlinx.coroutines.delay(2000) // Display splash for 2 seconds
-                                    currentScreen = "onboarding"
+                                    delay(2000)
+                                    try {
+                                        val currentUser = authManager.getCurrentUser()
+                                        if (currentUser != null) {
+                                            currentScreen = "dashboard"
+                                        } else {
+                                            currentScreen = "onboarding"
+                                        }
+                                    } catch (e: Exception) {
+                                        currentScreen = "onboarding"
+                                    }
                                 }
                             }
                             "onboarding" -> OnboardingScreen(onFinished = { currentScreen = "signin" })
@@ -61,7 +73,10 @@ class MainActivity : ComponentActivity() {
                             )
                             "forgot_password" -> ForgotPasswordScreen(onBack = { currentScreen = "signin" })
                             "signup" -> SignUpWizardScreen(
-                                onSignUpComplete = { currentScreen = "signin" },
+                                onSignUpComplete = { 
+                                    showToast("Account created! Please sign in.")
+                                    currentScreen = "signin" 
+                                },
                                 onSignInRedirect = { currentScreen = "signin" }
                             )
                             "dashboard" -> DashboardScreen(
@@ -101,7 +116,7 @@ class MainActivity : ComponentActivity() {
                                 onBack = { currentScreen = "dashboard" },
                                 onComplete = { 
                                     shouldFocusComment = false
-                                    currentScreen = "report_details" 
+                                    currentScreen = "reports" 
                                     showToast("Report submitted successfully!")
                                 }
                             )
@@ -163,7 +178,12 @@ class MainActivity : ComponentActivity() {
                                     shouldFocusComment = false
                                     currentScreen = "report_details" 
                                 },
-                                onLogout = { currentScreen = "signin" },
+                                onLogout = { 
+                                    scope.launch {
+                                        authManager.signOut()
+                                        currentScreen = "signin" 
+                                    }
+                                },
                                 initialSubView = ProfileSubView.SETTINGS
                             )
                             "announcements" -> AnnouncementsScreen(
@@ -183,7 +203,12 @@ class MainActivity : ComponentActivity() {
                                     shouldFocusComment = false
                                     currentScreen = "report_details" 
                                 },
-                                onLogout = { currentScreen = "signin" }
+                                onLogout = { 
+                                    scope.launch {
+                                        authManager.signOut()
+                                        currentScreen = "signin" 
+                                    }
+                                }
                             )
                             "emergency" -> EmergencyFlow(
                                 onBack = { currentScreen = "dashboard" },
@@ -199,7 +224,7 @@ class MainActivity : ComponentActivity() {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(bottom = 96.dp), // Positioned above bottom bars
+                                    .padding(bottom = 96.dp),
                                 contentAlignment = Alignment.BottomCenter
                             ) {
                                 Surface(
@@ -218,34 +243,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-/**
- * Enforces absolute viewport consistency across all application views.
- * Every screen is wrapped in a rigid, uniform container constrained to a standard max-width.
- */
-@Composable
-fun StandardViewport(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFE5E7EB)), // Neutral outer background (Slate-200)
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            modifier = Modifier
-                .widthIn(max = 420.dp)
-                .fillMaxWidth() // Enforce w-full within the max-width
-                .fillMaxHeight()
-                .shadow(elevation = 16.dp, shape = RectangleShape),
-            color = Color(0xFFF4F6F9), // Standardized application background
-            shape = RectangleShape
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                content()
             }
         }
     }

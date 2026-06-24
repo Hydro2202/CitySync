@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,7 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,17 +22,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.citysync.data.AuthManager
+import com.example.citysync.data.model.Report
+import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
-
-@Preview(showBackground = true, widthDp = 360)
-@Composable
-fun DashboardScreenPreview() {
-    CitySyncTheme {
-        DashboardScreen()
-    }
-}
+import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardScreen(
@@ -45,6 +42,31 @@ fun DashboardScreen(
     onNavigateToEmergency: () -> Unit = {},
     onNavigateToReportDetails: () -> Unit = {}
 ) {
+    val authManager = remember { AuthManager() }
+    val repository = remember { ReportRepository() }
+    val scope = rememberCoroutineScope()
+    
+    var recentReports by remember { mutableStateOf<List<Report>>(emptyList()) }
+    var userEmail by remember { mutableStateOf("") }
+    var activeCount by remember { mutableStateOf(0) }
+    var resolvedCount by remember { mutableStateOf(0) }
+    var pendingCount by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        val user = authManager.getCurrentUser()
+        userEmail = user?.email ?: "User"
+        val userId = user?.id
+        try {
+            val allReports = repository.getReports(userId)
+            recentReports = allReports.take(2)
+            activeCount = allReports.count { it.status == "In Progress" }
+            resolvedCount = allReports.count { it.status == "Resolved" }
+            pendingCount = allReports.count { it.status == "Under Review" }
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+
     Scaffold(
         containerColor = NotifBg,
         bottomBar = {
@@ -98,7 +120,7 @@ fun DashboardScreen(
                                     lineHeight = 20.sp
                                 )
                                 Text(
-                                    "Raiden",
+                                    userEmail.substringBefore("@"),
                                     color = Color.White,
                                     fontSize = DesignTokens.DashboardNameSize,
                                     fontWeight = FontWeight.Bold,
@@ -147,7 +169,7 @@ fun DashboardScreen(
                     ) {
                         MetricItem(
                             icon = Icons.Outlined.Schedule,
-                            count = "3",
+                            count = activeCount.toString(),
                             label = "Active",
                             iconBg = BlueTint,
                             iconColor = DeepNavy
@@ -159,7 +181,7 @@ fun DashboardScreen(
                         )
                         MetricItem(
                             icon = Icons.Outlined.CheckCircle,
-                            count = "12",
+                            count = resolvedCount.toString(),
                             label = "Resolved",
                             iconBg = GreenTint,
                             iconColor = GreenDark
@@ -171,7 +193,7 @@ fun DashboardScreen(
                         )
                         MetricItem(
                             icon = Icons.Outlined.Warning,
-                            count = "2",
+                            count = pendingCount.toString(),
                             label = "Pending",
                             iconBg = OrangeTint,
                             iconColor = OrangeDark
@@ -266,45 +288,74 @@ fun DashboardScreen(
                 }
             }
 
-            item { SectionHeader("Recent Reports", onViewAllClick = onNavigateToReports) }
-            item {
-                ReportListItem(
-                    title = "Broken Streetlight",
-                    meta = "Main St, Brgy. 5 • 2 days ago",
-                    status = "In Progress",
-                    badgeBg = OrangeTint,
-                    badgeText = OrangeDark,
-                    onClick = onNavigateToReportDetails
-                )
-            }
-            item {
-                ReportListItem(
-                    title = "Pothole on Highway",
-                    meta = "National Highway • 5 days ago",
-                    status = "Under Review",
-                    badgeBg = BlueTint,
-                    badgeText = DeepNavy,
-                    onClick = onNavigateToReportDetails
-                )
+            if (recentReports.isNotEmpty()) {
+                item { SectionHeader("Recent Reports", onViewAllClick = onNavigateToReports) }
+                items(recentReports) { report ->
+                    ReportListItem(
+                        title = report.title,
+                        meta = "${report.location} • ${report.createdAt?.take(10) ?: ""}",
+                        status = report.status,
+                        badgeBg = when(report.status.lowercase()) {
+                            "resolved" -> GreenTint
+                            "in progress" -> OrangeTint
+                            else -> BlueTint
+                        },
+                        badgeText = when(report.status.lowercase()) {
+                            "resolved" -> GreenDark
+                            "in progress" -> OrangeDark
+                            else -> DeepNavy
+                        },
+                        onClick = onNavigateToReportDetails
+                    )
+                }
+            } else {
+                item { SectionHeader("Recent Reports", onViewAllClick = onNavigateToReports) }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = DesignTokens.DashboardHeaderPaddingH, vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(DesignTokens.DashboardCardCorner),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Outlined.Description,
+                                contentDescription = null,
+                                tint = Color(0xFFD1D9E0),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "No reports yet",
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Your submitted reports will appear here.",
+                                color = TextMuted,
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
 
             item { SectionHeader("Announcements", onViewAllClick = onNavigateToAnnouncements) }
             item {
                 AnnouncementCard(
-                    title = "Road Maintenance Schedule",
-                    description = "Main Street closed for repairs June 15-17.",
-                    timeAgo = "1 day ago",
+                    title = "Welcome to CitySync",
+                    description = "Stay updated with real-time city announcements and reports.",
+                    timeAgo = "Just now",
                     showIcon = true,
                     onClick = { onNavigateToAnnouncementDetail("Infrastructure") }
-                )
-            }
-            item {
-                AnnouncementCard(
-                    title = "Water Service Interruption",
-                    description = "Scheduled maintenance June 12, 8 AM – 5 PM.",
-                    timeAgo = "2 days ago",
-                    showIcon = false,
-                    onClick = { onNavigateToAnnouncementDetail("Utilities") }
                 )
             }
 
@@ -538,5 +589,3 @@ fun AnnouncementCard(
         }
     }
 }
-
-// StandardBottomNavBar used instead of DashboardBottomNavBar

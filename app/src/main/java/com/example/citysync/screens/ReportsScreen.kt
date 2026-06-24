@@ -31,17 +31,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import com.example.citysync.R
+import com.example.citysync.data.AuthManager
+import com.example.citysync.data.model.Report
+import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.CitySyncTheme
-
-@Preview(showBackground = true, widthDp = 360)
-@Composable
-fun ReportsScreenPreview() {
-    CitySyncTheme {
-        ReportsScreen()
-    }
-}
+import kotlinx.coroutines.launch
 
 // Precise Colors from Prompt
 private val BrandBlue = Color(0xFF0D4E89)
@@ -66,92 +62,29 @@ fun ReportsScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToReportDetails: () -> Unit = {}
 ) {
+    val authManager = remember { AuthManager() }
+    val repository = remember { ReportRepository() }
+    val scope = rememberCoroutineScope()
+    var allReports by remember { mutableStateOf<List<Report>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
     var selectedFilter by remember { mutableStateOf("All") }
     var sortLatest by remember { mutableStateOf(true) }
     var isSortMenuExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val allReports = remember {
-        listOf(
-            ReportData(
-                id = "REP-2026-001239",
-                title = "Damaged Sidewalk",
-                location = "Oak Street, Brgy. 4",
-                status = "Closed",
-                statusBg = Color(0xFFF1F3F5),
-                statusText = Color(0xFF5A6B7C),
-                tags = listOf(
-                    TagData("Infrastructure", Color(0xFFF1F3F5), Color(0xFF718096)),
-                    TagData("Low", Color(0xFFEBF8FF), Color(0xFF2B6CB0))
-                ),
-                date = "May 28, 2026",
-                timestamp = 1716854400000L, // May 28
-                imageRes = R.drawable.street
-            ),
-            ReportData(
-                id = "REP-2026-001236",
-                title = "Broken Traffic Light",
-                location = "Intersection Ave, Brgy. 2",
-                status = "Resolved",
-                statusBg = Color(0xFFE6F4EA),
-                statusText = Color(0xFF137333),
-                tags = listOf(
-                    TagData("Traffic", Color(0xFFF1F3F5), Color(0xFF718096)),
-                    TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
-                ),
-                date = "May 30, 2026",
-                timestamp = 1717027200000L, // May 30
-                imageRes = R.drawable.brokentraffic
-            ),
-            ReportData(
-                id = "REP-2026-001237",
-                title = "Overflowing Garbage Bin",
-                location = "Greenwood Park, Brgy. 7",
-                status = "Assigned",
-                statusBg = Color(0xFFF3E8FF),
-                statusText = Color(0xFF6B21A8),
-                tags = listOf(
-                    TagData("Waste", Color(0xFFF1F3F5), Color(0xFF718096)),
-                    TagData("Medium", Color(0xFFFFF3CD), Color(0xFF856404))
-                ),
-                date = "June 2, 2026",
-                timestamp = 1717286400000L, // June 2
-                imageRes = R.drawable.garbage
-            ),
-            ReportData(
-                id = "REP-2026-001238",
-                title = "Pothole on National Highway",
-                location = "Zone 4, National Highway",
-                status = "Under Review",
-                statusBg = Color(0xFFFFEFE2),
-                statusText = Color(0xFFB76E00),
-                tags = listOf(
-                    TagData("Roads", Color(0xFFF1F3F5), Color(0xFF718096)),
-                    TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
-                ),
-                date = "June 3, 2026",
-                timestamp = 1717372800000L, // June 3
-                imageRes = R.drawable.street
-            ),
-            ReportData(
-                id = "REP-2026-001234",
-                title = "Broken Streetlight on Main Street",
-                location = "Main St, Brgy. 1",
-                status = "In Progress",
-                statusBg = Color(0xFFFFEFE2),
-                statusText = Color(0xFFB76E00),
-                tags = listOf(
-                    TagData("Lighting", Color(0xFFF1F3F5), Color(0xFF718096)),
-                    TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
-                ),
-                date = "June 4, 2026",
-                timestamp = 1717459200000L, // June 4
-                imageRes = R.drawable.brokenlight
-            )
-        )
+    LaunchedEffect(Unit) {
+        val userId = authManager.getCurrentUser()?.id
+        try {
+            allReports = repository.getReports(userId)
+        } catch (e: Exception) {
+            // Handle error
+        } finally {
+            isLoading = false
+        }
     }
 
-    val filteredReports = remember(selectedFilter, sortLatest, searchQuery) {
+    val filteredReports = remember(selectedFilter, sortLatest, searchQuery, allReports) {
         val filtered = allReports.filter { report ->
             val matchesFilter = if (selectedFilter == "All") {
                 true
@@ -170,9 +103,9 @@ fun ReportsScreen(
         }
         
         if (sortLatest) {
-            filtered.sortedByDescending { it.timestamp }
+            filtered.sortedByDescending { it.createdAt }
         } else {
-            filtered.sortedBy { it.timestamp }
+            filtered.sortedBy { it.createdAt }
         }
     }
 
@@ -314,15 +247,25 @@ fun ReportsScreen(
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredReports) { report ->
-                    ReportCard(report, onClick = onNavigateToReportDetails)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = BrandBlue)
+                }
+            } else if (filteredReports.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                    Text("No reports found", color = SubtitleColor)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredReports) { report ->
+                        ReportCard(report, onClick = onNavigateToReportDetails)
+                    }
                 }
             }
         }
@@ -363,7 +306,7 @@ fun FilterPill(label: String, isActive: Boolean, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
+fun ReportCard(report: Report, onClick: () -> Unit = {}) {
     Surface(
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
@@ -373,18 +316,20 @@ fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
             .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            if (report.imageRes != null) {
-                Image(
-                    painter = painterResource(id = report.imageRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            // Using a placeholder if no image URL is provided
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.LightGray),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
             }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -405,13 +350,20 @@ fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
                     )
                 }
                 
+                val (statusBg, statusText) = when(report.status.lowercase()) {
+                    "resolved" -> Color(0xFFE6F4EA) to Color(0xFF137333)
+                    "assigned" -> Color(0xFFF3E8FF) to Color(0xFF6B21A8)
+                    "in progress", "under review" -> Color(0xFFFFEFE2) to Color(0xFFB76E00)
+                    else -> Color(0xFFF1F3F5) to Color(0xFF5A6B7C)
+                }
+
                 Surface(
-                    color = report.statusBg,
+                    color = statusBg,
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = report.status,
-                        color = report.statusText,
+                        color = statusText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -429,12 +381,12 @@ fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     report.tags.forEach { tag ->
                         Surface(
-                            color = tag.bg,
+                            color = Color(0xFFF1F3F5),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = tag.label,
-                                color = tag.text,
+                                text = tag,
+                                color = Color(0xFF718096),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
@@ -443,7 +395,7 @@ fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
                 }
                 
                 Text(
-                    text = report.date,
+                    text = report.createdAt?.take(10) ?: "",
                     color = DateTextColor,
                     fontSize = 12.sp
                 )
@@ -451,30 +403,3 @@ fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
         }
     }
 }
-
-// StandardBottomNavBar used instead of ReportsBottomNavBar
-
-data class ReportData(
-    val id: String = "",
-    val title: String,
-    val location: String,
-    val status: String,
-    val statusBg: Color,
-    val statusText: Color,
-    val tags: List<TagData>,
-    val date: String,
-    val timestamp: Long = 0L,
-    val imageRes: Int? = null
-)
-
-data class TagData(
-    val label: String,
-    val bg: Color,
-    val text: Color
-)
-
-data class NavigationItem(
-    val label: String,
-    val icon: ImageVector,
-    val selected: Boolean
-)
