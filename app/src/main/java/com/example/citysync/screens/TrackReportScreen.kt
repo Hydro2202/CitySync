@@ -33,7 +33,8 @@ fun TrackReportScreen(
     onNavigateToReports: () -> Unit = {},
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onContactSupport: () -> Unit = {}
 ) {
     Scaffold(
         containerColor = Color(0xFFF4F6F9),
@@ -228,7 +229,7 @@ fun TrackReportScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { /* Contact Support */ },
+                            onClick = onContactSupport,
                             modifier = Modifier.fillMaxWidth().height(48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D4E89)),
                             shape = RoundedCornerShape(10.dp)

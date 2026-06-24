@@ -37,6 +37,20 @@ fun SecuritySettingsScreen(
     var biometricEnabled by remember { mutableStateOf(true) }
     var loginAlertsEnabled by remember { mutableStateOf(true) }
     
+    val securityScore = remember(twoFactorEnabled, biometricEnabled) {
+        var score = 40 // Base score
+        if (twoFactorEnabled) score += 30
+        if (biometricEnabled) score += 30
+        score
+    }
+    
+    val sessions = remember {
+        mutableStateListOf(
+            SessionData("Android Phone", "Naga City, PH · Now", Icons.Outlined.PhoneAndroid, true),
+            SessionData("Chrome on Windows", "Manila, PH · 2 days ago", Icons.Outlined.Laptop, false)
+        )
+    }
+    
     val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
@@ -86,13 +100,13 @@ fun SecuritySettingsScreen(
                             Text("Account Security", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                             Text("Raiden Villapando", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
-                        Text("60%", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text("$securityScore%", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     LinearProgressIndicator(
-                        progress = { 0.6f },
+                        progress = { securityScore / 100f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
@@ -104,7 +118,7 @@ fun SecuritySettingsScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text(
-                        "Enable 2FA to improve your security score.",
+                        if (securityScore < 100) "Enable ${if (!twoFactorEnabled) "2FA" else "Biometrics"} to improve your security score." else "Your account is highly secure.",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 13.sp
                     )
@@ -155,18 +169,16 @@ fun SecuritySettingsScreen(
 
             // Active Sessions
             SecuritySectionTitle("Active Sessions")
-            SessionCard(
-                icon = Icons.Outlined.PhoneAndroid,
-                device = "Android Phone",
-                location = "Naga City, PH · Now",
-                isCurrent = true
-            )
-            SessionCard(
-                icon = Icons.Outlined.Laptop,
-                device = "Chrome on Windows",
-                location = "Manila, PH · 2 days ago",
-                onRevoke = {}
-            )
+            sessions.forEach { session ->
+                SessionCard(
+                    icon = session.icon,
+                    device = session.device,
+                    location = session.location,
+                    isCurrent = session.isCurrent,
+                    onRevoke = if (!session.isCurrent) { { sessions.remove(session) } } else null
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Recent Activity
             SecuritySectionTitle("Recent Login Activity")
@@ -196,6 +208,13 @@ fun SecuritySettingsScreen(
         }
     }
 }
+
+data class SessionData(
+    val device: String,
+    val location: String,
+    val icon: ImageVector,
+    val isCurrent: Boolean
+)
 
 @Composable
 fun SecuritySectionTitle(title: String) {

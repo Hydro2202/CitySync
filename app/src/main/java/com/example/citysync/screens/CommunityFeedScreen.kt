@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.R
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
@@ -62,7 +64,8 @@ fun CommunityFeedScreen(
                 likes = 24,
                 commentsCount = 8,
                 isHot = true,
-                isTrending = true
+                isTrending = true,
+                imageRes = R.drawable.brokentraffic
             ),
             PostData(
                 id = 2,
@@ -80,7 +83,8 @@ fun CommunityFeedScreen(
                 statusBg = Color(0xFFF3E5F5),
                 likes = 15,
                 commentsCount = 3,
-                isNearby = true
+                isNearby = true,
+                imageRes = R.drawable.garbage
             )
         )
     }
@@ -397,20 +401,32 @@ fun CommunityPostCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF1F3F5)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Outlined.Image,
+            if (post.imageRes != null) {
+                Image(
+                    painter = painterResource(id = post.imageRes),
                     contentDescription = null,
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFF1F3F5)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Image,
+                        contentDescription = null,
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -490,7 +506,8 @@ data class PostData(
     val isHot: Boolean = false,
     val isLiked: Boolean = false,
     val isTrending: Boolean = false,
-    val isNearby: Boolean = false
+    val isNearby: Boolean = false,
+    val imageRes: Int? = null
 )
 
 @Composable

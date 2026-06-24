@@ -22,9 +22,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.R
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
+import com.example.citysync.data.FavoritesManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -55,6 +61,10 @@ fun ReportDetailsScreen(
     var isTracking by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    val reportData = remember(reportId) {
+        FavoritesManager.allMockReports.find { it.id == reportId }
+    }
 
     fun showToast(message: String) {
         toastMessage = message
@@ -103,6 +113,21 @@ fun ReportDetailsScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Text("Report Details", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        
+                        // Favorite Toggle Button
+                        val isFavorite = FavoritesManager.isFavorite(reportId)
+                        IconButton(
+                            onClick = { FavoritesManager.toggleFavorite(reportId) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                                tint = if (isFavorite) Color.White else Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+
                         Box {
                             IconButton(onClick = { isMenuExpanded = true }, modifier = Modifier.size(24.dp)) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "Menu", tint = Color.White)
@@ -258,9 +283,27 @@ fun ReportDetailsScreen(
                 item {
                     SectionCard("Photos") {
                         Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            repeat(3) {
-                                Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF1F3F5)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.LightGray)
+                            if (reportData?.imageRes != null) {
+                                Image(
+                                    painter = painterResource(id = reportData.imageRes),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(150.dp, 100.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                // Add a few more placeholders to simulate multiple photos if needed, 
+                                // or just show the one we have.
+                                repeat(2) {
+                                    Box(modifier = Modifier.size(150.dp, 100.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF1F3F5)), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Image, contentDescription = null, tint = Color.LightGray)
+                                    }
+                                }
+                            } else {
+                                repeat(3) {
+                                    Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF1F3F5)), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Image, contentDescription = null, tint = Color.LightGray)
+                                    }
                                 }
                             }
                         }

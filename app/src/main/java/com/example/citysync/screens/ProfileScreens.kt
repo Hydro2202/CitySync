@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class ProfileSubView {
-    MAIN, EDIT, SETTINGS, PRIVACY, SECURITY, HELP, CONTACT_SUPPORT, TERMS, PRIVACY_POLICY
+    MAIN, EDIT, SETTINGS, PRIVACY, SECURITY, HELP, CONTACT_SUPPORT, TERMS, PRIVACY_POLICY, FAVORITES
 }
 
 data class UserProfileData(
@@ -60,6 +60,7 @@ fun ProfileFlow(
     onNavigateToReports: () -> Unit = {},
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
+    onNavigateToReportDetails: (String) -> Unit = {},
     onLogout: () -> Unit = {},
     initialSubView: ProfileSubView = ProfileSubView.MAIN
 ) {
@@ -105,6 +106,7 @@ fun ProfileFlow(
                     onBack = onBack,
                     onEditClick = { currentSubView = ProfileSubView.EDIT },
                     onSettingsClick = { currentSubView = ProfileSubView.SETTINGS },
+                    onFavoritesClick = { currentSubView = ProfileSubView.FAVORITES },
                     onNavigateToReports = onNavigateToReports,
                     onNavigateToCommunity = onNavigateToCommunity,
                     onNavigateToNotifications = onNavigateToNotifications,
@@ -193,6 +195,10 @@ fun ProfileFlow(
                 ProfileSubView.PRIVACY_POLICY -> PrivacyPolicyScreen(
                     onBack = { currentSubView = ProfileSubView.SETTINGS }
                 )
+                ProfileSubView.FAVORITES -> FavoritesListScreen(
+                    onBack = { currentSubView = ProfileSubView.MAIN },
+                    onNavigateToReportDetails = onNavigateToReportDetails
+                )
             }
         }
 
@@ -250,6 +256,7 @@ fun MainProfileView(
     onBack: () -> Unit,
     onEditClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
     onNavigateToReports: () -> Unit,
     onNavigateToCommunity: () -> Unit,
     onNavigateToNotifications: () -> Unit,
@@ -392,6 +399,13 @@ fun MainProfileView(
                         label = "My Reports",
                         badge = "3",
                         onClick = onNavigateToReports,
+                        notifBlue = notifBlue,
+                        textDark = notifTextDark
+                    )
+                    NavigationRow(
+                        icon = Icons.Default.Favorite,
+                        label = "My Favorites",
+                        onClick = onFavoritesClick,
                         notifBlue = notifBlue,
                         textDark = notifTextDark
                     )
@@ -996,6 +1010,7 @@ fun MainProfileViewPreview() {
             onBack = {},
             onEditClick = {},
             onSettingsClick = {},
+            onFavoritesClick = {},
             onNavigateToReports = {},
             onNavigateToCommunity = {},
             onNavigateToNotifications = {},

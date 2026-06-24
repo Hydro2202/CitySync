@@ -144,12 +144,18 @@ fun SignInScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val isSignInEnabled = emailOrPhone.isNotBlank() && password.isNotBlank()
+
             Button(
                 onClick = onSignInSuccess,
+                enabled = isSignInEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DesignTokens.AuthButtonHeight),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DeepNavy,
+                    disabledContainerColor = DeepNavy.copy(alpha = 0.5f)
+                ),
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -291,11 +297,15 @@ fun ForgotPasswordScreen(onBack: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = { if (email.isNotBlank()) isLinkSent = true },
+                onClick = { isLinkSent = true },
+                enabled = email.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DesignTokens.AuthButtonHeight),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DeepNavy,
+                    disabledContainerColor = DeepNavy.copy(alpha = 0.5f)
+                ),
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -462,12 +472,20 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+            
+            val isStep1Valid = firstName.isNotBlank() && lastName.isNotBlank() && 
+                               email.isNotBlank() && phone.isNotBlank() && address.isNotBlank()
+
             Button(
                 onClick = { currentStep = 2 },
+                enabled = isStep1Valid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DesignTokens.AuthButtonHeight),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DeepNavy,
+                    disabledContainerColor = DeepNavy.copy(alpha = 0.5f)
+                ),
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -545,13 +563,22 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
+            
+            val isStep2Valid = createPassword.isNotBlank() && 
+                               confirmPassword.isNotBlank() && 
+                               createPassword == confirmPassword && 
+                               agreeToTerms
+
             Button(
                 onClick = onSignUpComplete,
-                enabled = agreeToTerms,
+                enabled = isStep2Valid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DesignTokens.AuthButtonHeight),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepNavy),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DeepNavy,
+                    disabledContainerColor = DeepNavy.copy(alpha = 0.5f)
+                ),
                 shape = RoundedCornerShape(DesignTokens.AuthButtonCorner),
                 contentPadding = PaddingValues(0.dp)
             ) {

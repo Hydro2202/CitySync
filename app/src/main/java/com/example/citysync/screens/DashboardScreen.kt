@@ -42,7 +42,8 @@ fun DashboardScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToAnnouncements: () -> Unit = {},
     onNavigateToAnnouncementDetail: (String) -> Unit = {},
-    onNavigateToEmergency: () -> Unit = {}
+    onNavigateToEmergency: () -> Unit = {},
+    onNavigateToReportDetails: () -> Unit = {}
 ) {
     Scaffold(
         containerColor = NotifBg,
@@ -272,7 +273,8 @@ fun DashboardScreen(
                     meta = "Main St, Brgy. 5 • 2 days ago",
                     status = "In Progress",
                     badgeBg = OrangeTint,
-                    badgeText = OrangeDark
+                    badgeText = OrangeDark,
+                    onClick = onNavigateToReportDetails
                 )
             }
             item {
@@ -281,7 +283,8 @@ fun DashboardScreen(
                     meta = "National Highway • 5 days ago",
                     status = "Under Review",
                     badgeBg = BlueTint,
-                    badgeText = DeepNavy
+                    badgeText = DeepNavy,
+                    onClick = onNavigateToReportDetails
                 )
             }
 
@@ -415,14 +418,22 @@ fun SectionHeader(title: String, onViewAllClick: () -> Unit = {}) {
 }
 
 @Composable
-fun ReportListItem(title: String, meta: String, status: String, badgeBg: Color, badgeText: Color) {
+fun ReportListItem(
+    title: String,
+    meta: String,
+    status: String,
+    badgeBg: Color,
+    badgeText: Color,
+    onClick: () -> Unit = {}
+) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
                 horizontal = DesignTokens.DashboardHeaderPaddingH,
                 vertical = DesignTokens.DashboardCardGap
-            ),
+            )
+            .clickable { onClick() },
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
         shape = RoundedCornerShape(DesignTokens.DashboardCardCorner),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)

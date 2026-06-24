@@ -13,11 +13,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,6 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.example.citysync.R
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.CitySyncTheme
@@ -57,15 +63,18 @@ fun ReportsScreen(
     onNavigateToReportWizard: () -> Unit = {},
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToReportDetails: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All") }
     var sortLatest by remember { mutableStateOf(true) }
     var isSortMenuExpanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val allReports = remember {
         listOf(
             ReportData(
+                id = "REP-2026-001239",
                 title = "Damaged Sidewalk",
                 location = "Oak Street, Brgy. 4",
                 status = "Closed",
@@ -76,9 +85,11 @@ fun ReportsScreen(
                     TagData("Low", Color(0xFFEBF8FF), Color(0xFF2B6CB0))
                 ),
                 date = "May 28, 2026",
-                timestamp = 1716854400000L // May 28
+                timestamp = 1716854400000L, // May 28
+                imageRes = R.drawable.street
             ),
             ReportData(
+                id = "REP-2026-001236",
                 title = "Broken Traffic Light",
                 location = "Intersection Ave, Brgy. 2",
                 status = "Resolved",
@@ -89,9 +100,11 @@ fun ReportsScreen(
                     TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
                 ),
                 date = "May 30, 2026",
-                timestamp = 1717027200000L // May 30
+                timestamp = 1717027200000L, // May 30
+                imageRes = R.drawable.brokentraffic
             ),
             ReportData(
+                id = "REP-2026-001237",
                 title = "Overflowing Garbage Bin",
                 location = "Greenwood Park, Brgy. 7",
                 status = "Assigned",
@@ -102,9 +115,11 @@ fun ReportsScreen(
                     TagData("Medium", Color(0xFFFFF3CD), Color(0xFF856404))
                 ),
                 date = "June 2, 2026",
-                timestamp = 1717286400000L // June 2
+                timestamp = 1717286400000L, // June 2
+                imageRes = R.drawable.garbage
             ),
             ReportData(
+                id = "REP-2026-001238",
                 title = "Pothole on National Highway",
                 location = "Zone 4, National Highway",
                 status = "Under Review",
@@ -115,9 +130,11 @@ fun ReportsScreen(
                     TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
                 ),
                 date = "June 3, 2026",
-                timestamp = 1717372800000L // June 3
+                timestamp = 1717372800000L, // June 3
+                imageRes = R.drawable.street
             ),
             ReportData(
+                id = "REP-2026-001234",
                 title = "Broken Streetlight on Main Street",
                 location = "Main St, Brgy. 1",
                 status = "In Progress",
@@ -128,16 +145,28 @@ fun ReportsScreen(
                     TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
                 ),
                 date = "June 4, 2026",
-                timestamp = 1717459200000L // June 4
+                timestamp = 1717459200000L, // June 4
+                imageRes = R.drawable.brokenlight
             )
         )
     }
 
-    val filteredReports = remember(selectedFilter, sortLatest) {
-        val filtered = if (selectedFilter == "All") {
-            allReports
-        } else {
-            allReports.filter { it.status.equals(selectedFilter, ignoreCase = true) }
+    val filteredReports = remember(selectedFilter, sortLatest, searchQuery) {
+        val filtered = allReports.filter { report ->
+            val matchesFilter = if (selectedFilter == "All") {
+                true
+            } else {
+                report.status.equals(selectedFilter, ignoreCase = true)
+            }
+            
+            val matchesSearch = if (searchQuery.isBlank()) {
+                true
+            } else {
+                report.title.contains(searchQuery, ignoreCase = true) || 
+                report.location.contains(searchQuery, ignoreCase = true)
+            }
+            
+            matchesFilter && matchesSearch
         }
         
         if (sortLatest) {
@@ -175,10 +204,17 @@ fun ReportsScreen(
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                             TextField(
-                                value = "",
-                                onValueChange = {},
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
                                 placeholder = { Text("Search reports...", color = PlaceholderColor, fontSize = 14.sp) },
                                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PlaceholderColor, modifier = Modifier.size(20.dp)) },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear", tint = PlaceholderColor, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(48.dp),
@@ -286,7 +322,7 @@ fun ReportsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(filteredReports) { report ->
-                    ReportCard(report)
+                    ReportCard(report, onClick = onNavigateToReportDetails)
                 }
             }
         }
@@ -327,14 +363,28 @@ fun FilterPill(label: String, isActive: Boolean, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun ReportCard(report: ReportData) {
+fun ReportCard(report: ReportData, onClick: () -> Unit = {}) {
     Surface(
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderSlate100),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            if (report.imageRes != null) {
+                Image(
+                    painter = painterResource(id = report.imageRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -405,6 +455,7 @@ fun ReportCard(report: ReportData) {
 // StandardBottomNavBar used instead of ReportsBottomNavBar
 
 data class ReportData(
+    val id: String = "",
     val title: String,
     val location: String,
     val status: String,
@@ -412,7 +463,8 @@ data class ReportData(
     val statusText: Color,
     val tags: List<TagData>,
     val date: String,
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    val imageRes: Int? = null
 )
 
 data class TagData(
