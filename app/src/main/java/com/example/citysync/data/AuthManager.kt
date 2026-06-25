@@ -32,29 +32,60 @@ class AuthManager {
         }
     }
 
+    suspend fun updateProfile(
+        firstName: String,
+        lastName: String,
+        email: String,
+        phone: String,
+        address: String
+    ) {
+        val user = getCurrentUser() ?: throw IllegalStateException("No authenticated user")
+
+        val fullName = "${firstName.trim()} ${lastName.trim()}".trim()
+        val trimmedPhone = phone.trim()
+        val trimmedAddress = address.trim()
+        val trimmedEmail = email.trim()
+
+        auth.updateUser {
+            if (trimmedEmail.isNotBlank() && trimmedEmail != user.email) {
+                this.email = trimmedEmail
+            }
+            data = buildJsonObject {
+                put("full_name", fullName)
+                put("phone", trimmedPhone)
+                put("address", trimmedAddress)
+            }
+        }
+
+        postgrest["users"].update(
+            buildJsonObject {
+                put("full_name", fullName)
+                put("phone", trimmedPhone)
+                put("address", trimmedAddress)
+                put("email", trimmedEmail)
+            }
+        ) {
+            filter {
+                eq("id", user.id)
+            }
+        }
+    }
+
     suspend fun signOut() {
         auth.signOut()
     }
 
     suspend fun deleteAccount() {
-        val user = getCurrentUser()
-        if (user != null) {
-            try {
-                // 1. Delete profile from public.users first
-                postgrest["users"].delete {
-                    filter {
-                        eq("id", user.id)
-                    }
-                }
+        val user = getCurrentUser() ?: throw IllegalStateException("No authenticated user")
 
-                // 2. Call RPC to delete from auth.users
-                postgrest.rpc("delete_user_account")
-            } catch (e: Exception) {
-                // Log or handle error if RPC fails
-            } finally {
-                auth.signOut()
+        postgrest["reports"].delete {
+            filter {
+                eq("user_id", user.id)
             }
         }
+
+        postgrest.rpc("delete_user_account")
+        auth.signOut()
     }
 
     fun getCurrentUser() = auth.currentUserOrNull()

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.citysync.data.AuthManager
-import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -35,11 +34,11 @@ fun PrivacySettingsScreen(
     onAccountDeleted: () -> Unit = {}
 ) {
     val authManager = remember { AuthManager() }
-    val reportRepository = remember { ReportRepository() }
     val scope = rememberCoroutineScope()
     
     var showDeleteModal by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
     
     // Toggle states
     var publicProfile by remember { mutableStateOf(true) }
@@ -149,27 +148,21 @@ fun PrivacySettingsScreen(
             onDismiss = { if (!isDeleting) showDeleteModal = false },
             onConfirm = {
                 isDeleting = true
+                deleteError = null
                 scope.launch {
                     try {
-                        val userId = authManager.getCurrentUser()?.id
-                        if (userId != null) {
-                            // 1. Delete all user reports from database
-                            reportRepository.deleteUserReports(userId)
-                            
-                            // 2. Delete auth account (via RPC + SignOut)
-                            authManager.deleteAccount()
-                            
-                            showDeleteModal = false
-                            onAccountDeleted()
-                        }
+                        authManager.deleteAccount()
+                        showDeleteModal = false
+                        onAccountDeleted()
                     } catch (e: Exception) {
-                        // Error handling
+                        deleteError = e.localizedMessage ?: e.message ?: "Failed to delete account"
                     } finally {
                         isDeleting = false
                     }
                 }
             },
-            isLoading = isDeleting
+            isLoading = isDeleting,
+            errorMessage = deleteError
         )
     }
 }
@@ -203,7 +196,8 @@ fun PrivacyToggleRow(
 fun AccountDeletionModal(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    errorMessage: String? = null
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -293,6 +287,17 @@ fun AccountDeletionModal(
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                     
                     Button(
                         onClick = onConfirm,

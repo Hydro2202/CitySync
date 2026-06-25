@@ -128,6 +128,7 @@ fun ProfileFlow(
     }
     
     var isSigningOut by remember { mutableStateOf(false) }
+    var isSavingProfile by remember { mutableStateOf(false) }
     var showModal by remember { mutableStateOf(false) }
     var selectedModalTitle by remember { mutableStateOf("") }
     val modalSheetState = rememberModalBottomSheetState()
@@ -180,13 +181,30 @@ fun ProfileFlow(
                 )
                 ProfileSubView.EDIT -> EditProfileView(
                     initialData = userData,
+                    isSaving = isSavingProfile,
                     onBack = { currentSubView = ProfileSubView.MAIN },
                     onSave = { newData ->
-                        userData = newData
                         scope.launch {
-                            snackbarHostState.showSnackbar("Profile updated successfully")
+                            isSavingProfile = true
+                            try {
+                                authManager.updateProfile(
+                                    firstName = newData.firstName,
+                                    lastName = newData.lastName,
+                                    email = newData.email,
+                                    phone = newData.phone,
+                                    address = newData.address
+                                )
+                                userData = newData
+                                snackbarHostState.showSnackbar("Profile updated successfully")
+                                currentSubView = ProfileSubView.MAIN
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar(
+                                    "Failed to update profile: ${e.localizedMessage ?: e.message ?: "Unknown error"}"
+                                )
+                            } finally {
+                                isSavingProfile = false
+                            }
                         }
-                        currentSubView = ProfileSubView.MAIN
                     },
                     notifBlue = NotifBlueLocal,
                     notifBg = NotifBgLocal,
@@ -501,6 +519,7 @@ fun MainProfileView(
 @Composable
 fun EditProfileView(
     initialData: UserProfileData,
+    isSaving: Boolean = false,
     onBack: () -> Unit,
     onSave: (UserProfileData) -> Unit,
     notifBlue: Color,
@@ -601,11 +620,20 @@ fun EditProfileView(
                             address = address
                         )) 
                     },
+                    enabled = !isSaving,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = notifBlue)
                 ) {
-                    Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
                 }
             }
         }
