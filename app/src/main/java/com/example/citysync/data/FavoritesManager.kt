@@ -1,8 +1,8 @@
 package com.example.citysync.data
 
 import androidx.compose.runtime.mutableStateListOf
-import com.example.citysync.screens.ReportData
-import com.example.citysync.screens.TagData
+import com.example.citysync.ui.screens.reports.ReportData
+import com.example.citysync.ui.screens.reports.TagData
 import androidx.compose.ui.graphics.Color
 import com.example.citysync.R
 

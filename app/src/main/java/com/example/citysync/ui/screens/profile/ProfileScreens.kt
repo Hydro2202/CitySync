@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.profile
 
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
@@ -30,11 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.data.AuthManager
+import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import io.github.jan.supabase.auth.user.UserInfo
 
 enum class ProfileSubView {
     MAIN, EDIT, SETTINGS, PRIVACY, SECURITY, HELP, CONTACT_SUPPORT, TERMS, PRIVACY_POLICY, FAVORITES
@@ -73,16 +76,52 @@ fun ProfileFlow(
     val ProfileHelpBgLocal = Color(0xFFEBF8FF)
     val ProfileEmailMutedLocal = Color(0xFF7A8B9C)
 
+    val authManager = remember { AuthManager() }
+    val reportRepository = remember { ReportRepository() }
+    
     val context = LocalContext.current
     var currentSubView by remember { mutableStateOf(initialSubView) }
     var userData by remember { 
         mutableStateOf(UserProfileData(
-            firstName = "Raiden",
-            lastName = "Villapando",
-            email = "raiden.villapando@email.com",
-            phone = "+63 912 345 6789",
-            address = "Manila, Philippines"
+            firstName = "New",
+            lastName = "Citizen",
+            email = "",
+            phone = "No phone linked",
+            address = "Manila, Philippines",
+            totalReports = "0",
+            resolvedReports = "0",
+            pendingReports = "0"
         ))
+    }
+
+    LaunchedEffect(Unit) {
+        val user = authManager.getCurrentUser()
+        if (user != null) {
+            val fullName = user.userMetadata?.get("full_name")?.toString()?.removeSurrounding("\"") ?: "New Citizen"
+            val phone = user.userMetadata?.get("phone")?.toString()?.removeSurrounding("\"") ?: "No phone linked"
+            val address = user.userMetadata?.get("address")?.toString()?.removeSurrounding("\"") ?: "Manila, Philippines"
+            
+            // Fetch real-time counters
+            val reports = reportRepository.getReports(user.id)
+            val total = reports.size
+            val resolved = reports.count { it.status.equals("Resolved", ignoreCase = true) }
+            val pending = reports.count { 
+                it.status.equals("Assigned", ignoreCase = true) || 
+                it.status.equals("In Progress", ignoreCase = true) || 
+                it.status.equals("Under Review", ignoreCase = true) 
+            }
+
+            userData = userData.copy(
+                firstName = fullName.substringBefore(" "),
+                lastName = fullName.substringAfter(" ", ""),
+                email = user.email ?: "",
+                phone = phone,
+                address = address,
+                totalReports = total.toString(),
+                resolvedReports = resolved.toString(),
+                pendingReports = pending.toString()
+            )
+        }
     }
     
     var isSigningOut by remember { mutableStateOf(false) }
@@ -346,7 +385,7 @@ fun MainProfileView(
                             Column {
                                 Text("${userData.firstName} ${userData.lastName}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = notifTextDark)
                                 Text(userData.email, fontSize = 14.sp, color = emailMuted)
-                                Text(userData.location, fontSize = 12.sp, color = notifTextTimestamp)
+                                Text(userData.address, fontSize = 12.sp, color = notifTextTimestamp)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = notifTextTimestamp, modifier = Modifier.size(14.dp))
@@ -397,7 +436,7 @@ fun MainProfileView(
                     NavigationRow(
                         icon = Icons.Default.Description,
                         label = "My Reports",
-                        badge = "3",
+                        badge = if (userData.totalReports != "0") userData.totalReports else null,
                         onClick = onNavigateToReports,
                         notifBlue = notifBlue,
                         textDark = notifTextDark

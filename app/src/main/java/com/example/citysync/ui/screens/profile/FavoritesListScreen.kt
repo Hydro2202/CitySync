@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.citysync.data.FavoritesManager
+import com.example.citysync.ui.screens.reports.ReportData
+import com.example.citysync.ui.screens.reports.TagData
 import com.example.citysync.ui.theme.CitySyncTheme
 import com.example.citysync.R
 

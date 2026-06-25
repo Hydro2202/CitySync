@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.auth
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -33,7 +33,10 @@ import com.example.citysync.data.AuthManager
 import com.example.citysync.ui.components.CitySyncLogoSignIn
 import com.example.citysync.ui.components.CitySyncLogoSignUp
 import com.example.citysync.ui.theme.*
+import io.github.jan.supabase.exceptions.RestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.coroutines.launch
+import java.net.ConnectException
 
 @Composable
 fun SignInScreen(
@@ -150,7 +153,12 @@ fun SignInScreen(
                             authManager.signIn(emailOrPhone, password)
                             onSignInSuccess()
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "Authentication failed"
+                            val msg = e.message ?: ""
+                            errorMessage = when {
+                                msg.contains("Invalid login credentials", true) -> "Invalid email or password."
+                                msg.contains("Email not confirmed", true) -> "Please confirm your email address."
+                                else -> "Login failed. Please check your connection."
+                            }
                         } finally {
                             isLoading = false
                         }
@@ -596,10 +604,21 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                     errorMessage = null
                     scope.launch {
                         try {
-                            authManager.signUp(email, createPassword)
+                            val fullName = "$firstName $lastName"
+                            authManager.signUp(email, createPassword, fullName, phone, address)
                             onSignUpComplete()
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "Registration failed"
+                            val detail = when (e) {
+                                is RestException -> e.description ?: e.message ?: "Supabase Error"
+                                else -> e.localizedMessage ?: e.message ?: e.toString()
+                            }
+                            
+                            errorMessage = when {
+                                detail.contains("already registered", true) -> "This email is already in use."
+                                detail.contains("Unknown Error", true) -> "CRITICAL: Disable 'Confirm Email' in Supabase Auth Settings!"
+                                else -> "Registration Error: $detail"
+                            }
+                            e.printStackTrace()
                         } finally {
                             isLoading = false
                         }

@@ -17,7 +17,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.citysync.data.AuthManager
-import com.example.citysync.screens.*
+import com.example.citysync.ui.screens.auth.*
+import com.example.citysync.ui.screens.profile.*
+import com.example.citysync.ui.screens.reports.*
+import com.example.citysync.ui.screens.community.*
+import com.example.citysync.ui.screens.alerts.*
+import com.example.citysync.ui.screens.dashboard.*
 import com.example.citysync.ui.theme.CitySyncTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,9 +30,13 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Handle Edge-to-Edge correctly
         enableEdgeToEdge()
+        
         setContent {
-            CitySyncTheme(dynamicColor = false) {
+            // Force light mode for now to ensure visibility on all emulators
+            CitySyncTheme(darkTheme = false, dynamicColor = false) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -52,14 +61,10 @@ class MainActivity : ComponentActivity() {
                             "splash" -> {
                                 SplashScreen()
                                 LaunchedEffect(Unit) {
-                                    delay(2000)
+                                    delay(1500)
                                     try {
                                         val currentUser = authManager.getCurrentUser()
-                                        if (currentUser != null) {
-                                            currentScreen = "dashboard"
-                                        } else {
-                                            currentScreen = "onboarding"
-                                        }
+                                        currentScreen = if (currentUser != null) "dashboard" else "onboarding"
                                     } catch (e: Exception) {
                                         currentScreen = "onboarding"
                                     }
@@ -219,7 +224,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Global Toast Message Overlay
+                        // Global Toast Overlay
                         toastMessage?.let { msg ->
                             Box(
                                 modifier = Modifier
@@ -229,8 +234,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Surface(
                                     color = Color(0xFF1F2937),
-                                    shape = RoundedCornerShape(24.dp),
-                                    shadowElevation = 8.dp
+                                    shape = RoundedCornerShape(24.dp)
                                 ) {
                                     Text(
                                         text = msg,

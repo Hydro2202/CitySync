@@ -8,17 +8,21 @@ data class Report(
     @SerialName("id")
     val id: String? = null,
     @SerialName("user_id")
-    val userId: String? = null,
+    val reportedBy: String? = null,
     @SerialName("title")
     val title: String,
+    @SerialName("tags")
+    val tags: String, // Combined category and priority for now
+    @SerialName("status")
+    val status: String = "Assigned",
     @SerialName("location")
     val location: String,
-    @SerialName("status")
-    val status: String,
-    @SerialName("tags")
-    val tags: List<String> = emptyList(),
-    @SerialName("created_at")
-    val createdAt: String? = null,
+    @SerialName("description")
+    val description: String? = null,
+    @SerialName("reference")
+    val reference: String? = null,
     @SerialName("image_url")
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    @SerialName("created_at")
+    val createdAt: String? = null
 )

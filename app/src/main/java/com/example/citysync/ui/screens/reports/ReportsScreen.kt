@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.reports
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -379,13 +379,13 @@ fun ReportCard(report: Report, onClick: () -> Unit = {}) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    report.tags.forEach { tag ->
+                    report.tags.split(",").filter { it.isNotBlank() }.forEach { tag ->
                         Surface(
                             color = Color(0xFFF1F3F5),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = tag,
+                                text = tag.trim(),
                                 color = Color(0xFF718096),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

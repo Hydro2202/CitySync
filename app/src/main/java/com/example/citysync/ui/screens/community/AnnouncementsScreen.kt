@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.community
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background

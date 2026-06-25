@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,7 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.citysync.data.AuthManager
+import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +34,12 @@ fun PrivacySettingsScreen(
     onBack: () -> Unit = {},
     onAccountDeleted: () -> Unit = {}
 ) {
+    val authManager = remember { AuthManager() }
+    val reportRepository = remember { ReportRepository() }
+    val scope = rememberCoroutineScope()
+    
     var showDeleteModal by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
     
     // Toggle states
     var publicProfile by remember { mutableStateOf(true) }
@@ -138,11 +146,30 @@ fun PrivacySettingsScreen(
 
     if (showDeleteModal) {
         AccountDeletionModal(
-            onDismiss = { showDeleteModal = false },
+            onDismiss = { if (!isDeleting) showDeleteModal = false },
             onConfirm = {
-                showDeleteModal = false
-                onAccountDeleted()
-            }
+                isDeleting = true
+                scope.launch {
+                    try {
+                        val userId = authManager.getCurrentUser()?.id
+                        if (userId != null) {
+                            // 1. Delete all user reports from database
+                            reportRepository.deleteUserReports(userId)
+                            
+                            // 2. Delete auth account (via RPC + SignOut)
+                            authManager.deleteAccount()
+                            
+                            showDeleteModal = false
+                            onAccountDeleted()
+                        }
+                    } catch (e: Exception) {
+                        // Error handling
+                    } finally {
+                        isDeleting = false
+                    }
+                }
+            },
+            isLoading = isDeleting
         )
     }
 }
@@ -175,11 +202,16 @@ fun PrivacyToggleRow(
 @Composable
 fun AccountDeletionModal(
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    isLoading: Boolean = false
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = !isLoading,
+            dismissOnClickOutside = !isLoading
+        )
     ) {
         Box(
             modifier = Modifier
@@ -266,9 +298,18 @@ fun AccountDeletionModal(
                         onClick = onConfirm,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isLoading
                     ) {
-                        Text("Yes, Delete My Account", fontWeight = FontWeight.Bold)
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Yes, Delete My Account", fontWeight = FontWeight.Bold)
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
@@ -277,7 +318,8 @@ fun AccountDeletionModal(
                         onClick = onDismiss,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E0))
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E0)),
+                        enabled = !isLoading
                     ) {
                         Text("Cancel", color = Color(0xFF4A5568))
                     }

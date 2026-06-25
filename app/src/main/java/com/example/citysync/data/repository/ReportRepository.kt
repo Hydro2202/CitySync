@@ -52,4 +52,12 @@ class ReportRepository {
             }
         }
     }
+
+    suspend fun deleteUserReports(userId: String) = withContext(Dispatchers.IO) {
+        postgrest["reports"].delete {
+            filter {
+                eq("user_id", userId)
+            }
+        }
+    }
 }

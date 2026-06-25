@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.alerts
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween

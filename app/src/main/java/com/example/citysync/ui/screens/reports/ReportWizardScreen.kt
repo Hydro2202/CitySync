@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.reports
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -28,6 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.example.citysync.R
 import com.example.citysync.data.AuthManager
 import com.example.citysync.data.model.Report
 import com.example.citysync.data.repository.ReportRepository
@@ -40,9 +44,10 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
     val repository = remember { ReportRepository() }
     val scope = rememberCoroutineScope()
     var isSubmitting by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var currentStep by remember { mutableStateOf(1) }
-    var photoAdded by remember { mutableStateOf(false) }
+    var selectedImageRes by remember { mutableStateOf<Int?>(null) }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
@@ -54,7 +59,7 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
     var province by remember { mutableStateOf("") }
     var landmark by remember { mutableStateOf("") }
 
-    val isStep1Valid = photoAdded
+    val isStep1Valid = selectedImageRes != null
     val isStep2Valid = title.isNotBlank() && description.isNotBlank()
     val isStep3Valid = selectedCategory != null
     val isStep4Valid = streetName.isNotBlank() && barangay.isNotBlank() && city.isNotBlank()
@@ -79,10 +84,11 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
             Box(modifier = Modifier.weight(1f)) {
                 when (currentStep) {
                     1 -> Step1AddPhotos(
-                        photoAdded = photoAdded,
-                        onPhotoAdded = { photoAdded = it },
+                        photoAdded = selectedImageRes != null,
+                        onPhotoAdded = { if (it) selectedImageRes = R.drawable.brokenlight else selectedImageRes = null },
                         onNext = { if (isStep1Valid) currentStep = 2 },
-                        isValid = isStep1Valid
+                        isValid = isStep1Valid,
+                        selectedImageRes = selectedImageRes
                     )
                     2 -> Step2IssueDetails(
                         title = title,
@@ -119,23 +125,33 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
                         location = "$streetName, $barangay, $city",
                         landmark = landmark,
                         isSubmitting = isSubmitting,
+                        errorMessage = errorMessage,
+                        selectedImageRes = selectedImageRes,
                         onBack = { currentStep = 4 },
                         onSubmit = {
                             isSubmitting = true
+                            errorMessage = null
                             scope.launch {
                                 try {
-                                    val userId = authManager.getCurrentUser()?.id
+                                    val user = authManager.getCurrentUser()
+                                    if (user == null) throw Exception("No authenticated user found")
+                                    
+                                    val reference = "REP-2026-${System.currentTimeMillis().toString().takeLast(6)}"
                                     val newReport = Report(
-                                        userId = userId,
+                                        reportedBy = user.id,
                                         title = title,
+                                        tags = "$selectedCategory, Low Priority",
+                                        status = "Assigned",
                                         location = "$streetName, $barangay, $city",
-                                        status = "Under Review",
-                                        tags = listOf(selectedCategory ?: "General")
+                                        description = description,
+                                        reference = reference,
+                                        imageUrl = "" // Placeholder
                                     )
                                     repository.createReport(newReport)
                                     currentStep = 6
                                 } catch (e: Exception) {
-                                    // Handle error
+                                    errorMessage = "Submission failed: ${e.message}"
+                                    println("Report Submission Failure: ${e.message}")
                                 } finally {
                                     isSubmitting = false
                                 }
@@ -217,7 +233,13 @@ fun getStepLabel(step: Int): String = when (step) {
 }
 
 @Composable
-fun Step1AddPhotos(photoAdded: Boolean, onPhotoAdded: (Boolean) -> Unit, onNext: () -> Unit, isValid: Boolean) {
+fun Step1AddPhotos(
+    photoAdded: Boolean,
+    onPhotoAdded: (Boolean) -> Unit,
+    onNext: () -> Unit,
+    isValid: Boolean,
+    selectedImageRes: Int? = null
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -254,9 +276,19 @@ fun Step1AddPhotos(photoAdded: Boolean, onPhotoAdded: (Boolean) -> Unit, onNext:
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color.LightGray)
             ) {
-                // Placeholder for image
-                Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE2E8F0)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                // Display the selected local resource image
+                if (selectedImageRes != null) {
+                    Image(
+                        painter = painterResource(id = selectedImageRes),
+                        contentDescription = "Selected Photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Fallback placeholder
+                    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE2E8F0)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                    }
                 }
                 
                 // Delete button
@@ -575,6 +607,8 @@ fun Step4LocationForm(
 fun Step5Review(
     title: String, category: String, description: String, 
     location: String, landmark: String, isSubmitting: Boolean,
+    errorMessage: String? = null,
+    selectedImageRes: Int? = null,
     onBack: () -> Unit, onSubmit: () -> Unit
 ) {
     Column(
@@ -590,8 +624,17 @@ fun Step5Review(
 
         // Media Preview
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(modifier = Modifier.size(80.dp).background(Color(0xFFE2E8F0), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray)
+            if (selectedImageRes != null) {
+                Image(
+                    painter = painterResource(id = selectedImageRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(modifier = Modifier.size(80.dp).background(Color(0xFFE2E8F0), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray)
+                }
             }
         }
 
@@ -617,6 +660,22 @@ fun Step5Review(
                 modifier = Modifier.padding(16.dp),
                 lineHeight = 18.sp
             )
+        }
+
+        if (errorMessage != null) {
+            Surface(
+                color = Color(0xFFFCE8E6),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = Color(0xFFC5221F),
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(16.dp),
+                    lineHeight = 18.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))

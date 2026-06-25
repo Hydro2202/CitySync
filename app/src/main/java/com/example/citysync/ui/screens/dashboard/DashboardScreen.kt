@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,14 +56,24 @@ fun DashboardScreen(
         val user = authManager.getCurrentUser()
         userEmail = user?.email ?: "User"
         val userId = user?.id
-        try {
-            val allReports = repository.getReports(userId)
-            recentReports = allReports.take(2)
-            activeCount = allReports.count { it.status == "In Progress" }
-            resolvedCount = allReports.count { it.status == "Resolved" }
-            pendingCount = allReports.count { it.status == "Under Review" }
-        } catch (e: Exception) {
-            // Handle error
+        
+        // Ensure metrics are reset to 0 for a fresh start or new account
+        activeCount = 0
+        resolvedCount = 0
+        pendingCount = 0
+        recentReports = emptyList()
+
+        if (userId != null) {
+            try {
+                val allReports = repository.getReports(userId)
+                recentReports = allReports.take(2)
+                activeCount = allReports.count { it.status.lowercase() == "assigned" || it.status.lowercase() == "in progress" }
+                resolvedCount = allReports.count { it.status.lowercase() == "resolved" }
+                pendingCount = allReports.count { it.status.lowercase() == "under review" }
+            } catch (e: Exception) {
+                // If fetch fails, keep metrics at 0 for fresh account UX
+                println("Dashboard fetch error: ${e.message}")
+            }
         }
     }
 

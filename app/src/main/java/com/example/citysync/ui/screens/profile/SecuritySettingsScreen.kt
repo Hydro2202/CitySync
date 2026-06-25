@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

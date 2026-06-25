@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.community
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*

@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.profile
 
 import android.content.Intent
 import android.net.Uri

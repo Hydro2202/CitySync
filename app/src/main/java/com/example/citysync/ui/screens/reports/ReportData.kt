@@ -1,4 +1,4 @@
-package com.example.citysync.screens
+package com.example.citysync.ui.screens.reports
 
 import androidx.compose.ui.graphics.Color
 
