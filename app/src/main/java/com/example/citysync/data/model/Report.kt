@@ -12,7 +12,9 @@ data class Report(
     @SerialName("title")
     val title: String,
     @SerialName("tags")
-    val tags: String, // Combined category and priority for now
+    val tags: String,
+    @SerialName("priority")
+    val priority: String = "Medium Priority",
     @SerialName("status")
     val status: String = "Assigned",
     @SerialName("location")

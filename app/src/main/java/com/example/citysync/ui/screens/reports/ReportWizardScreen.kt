@@ -33,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import com.example.citysync.R
 import com.example.citysync.data.AuthManager
+import com.example.citysync.data.ReportPriority
 import com.example.citysync.data.model.Report
 import com.example.citysync.data.repository.ReportRepository
 import com.example.citysync.ui.theme.*
@@ -137,10 +138,12 @@ fun ReportWizardScreen(onBack: () -> Unit, onComplete: () -> Unit) {
                                     if (user == null) throw Exception("No authenticated user found")
                                     
                                     val reference = "REP-2026-${System.currentTimeMillis().toString().takeLast(6)}"
+                                    val priority = ReportPriority.forCategory(selectedCategory ?: "")
                                     val newReport = Report(
                                         reportedBy = user.id,
                                         title = title,
-                                        tags = "$selectedCategory, Low Priority",
+                                        tags = "$selectedCategory, $priority",
+                                        priority = priority,
                                         status = "Assigned",
                                         location = "$streetName, $barangay, $city",
                                         description = description,

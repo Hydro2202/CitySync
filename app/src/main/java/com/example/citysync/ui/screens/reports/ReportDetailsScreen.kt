@@ -255,8 +255,12 @@ fun ReportDetailsScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                BadgePill("Lighting", Color(0xFFF1F3F5), Color(0xFF5A6B7C))
-                                BadgePill("High Priority", Color(0xFFFCE8E6), Color(0xFFC5221F))
+                                reportData?.tags?.forEach { tag ->
+                                    BadgePill(tag.name, tag.bgColor, tag.textColor)
+                                } ?: run {
+                                    BadgePill("Lighting", Color(0xFFF1F3F5), Color(0xFF5A6B7C))
+                                    BadgePill("High Priority", Color(0xFFFCE8E6), Color(0xFFC5221F))
+                                }
                             }
                             Spacer(modifier = Modifier.height(20.dp))
                             HorizontalDivider(color = Color(0xFFF1F5F9))

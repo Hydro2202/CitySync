@@ -6,6 +6,9 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ReportRepository {
 
@@ -21,6 +24,13 @@ class ReportRepository {
                 }
             }
             .decodeList<Report>()
+    }
+
+    fun countReportsThisMonth(reports: List<Report>): Int {
+        val monthPrefix = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
+        return reports.count { report ->
+            report.createdAt?.take(7) == monthPrefix
+        }
     }
 
     suspend fun getReportById(id: String): Report? = withContext(Dispatchers.IO) {

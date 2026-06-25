@@ -53,7 +53,8 @@ data class UserProfileData(
     val memberSince: String = "January 2026",
     val totalReports: String = "27",
     val resolvedReports: String = "18",
-    val pendingReports: String = "9"
+    val pendingReports: String = "9",
+    val reportsThisMonth: String = "0"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,6 +111,7 @@ fun ProfileFlow(
                 it.status.equals("In Progress", ignoreCase = true) || 
                 it.status.equals("Under Review", ignoreCase = true) 
             }
+            val thisMonth = reportRepository.countReportsThisMonth(reports)
 
             userData = userData.copy(
                 firstName = fullName.substringBefore(" "),
@@ -119,7 +121,8 @@ fun ProfileFlow(
                 address = address,
                 totalReports = total.toString(),
                 resolvedReports = resolved.toString(),
-                pendingReports = pending.toString()
+                pendingReports = pending.toString(),
+                reportsThisMonth = thisMonth.toString()
             )
         }
     }
@@ -468,7 +471,7 @@ fun MainProfileView(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Report Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = notifTextDark)
                         Spacer(modifier = Modifier.height(16.dp))
-                        SummaryRow("Reports this month", "5", notifTextMuted, notifTextDark)
+                        SummaryRow("Reports this month", userData.reportsThisMonth, notifTextMuted, notifTextDark)
                         Spacer(modifier = Modifier.height(12.dp))
                         SummaryRow("Average resolution time", "4.2 days", notifTextMuted, notifTextDark)
                     }

@@ -52,6 +52,15 @@ private val SubtitleColor = Color(0xFF718096)
 private val DateTextColor = Color(0xFFA0AEC0)
 private val BorderSlate100 = Color(0xFFF1F5F9)
 
+private fun priorityBadgeColors(priority: String): Pair<Color, Color> = when {
+    priority.contains("high", ignoreCase = true) ->
+        Color(0xFFFCE8E6) to Color(0xFFC5221F)
+    priority.contains("medium", ignoreCase = true) ->
+        Color(0xFFFFF3CD) to Color(0xFF856404)
+    else ->
+        Color(0xFFEBF8FF) to Color(0xFF2B6CB0)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
@@ -379,18 +388,31 @@ fun ReportCard(report: Report, onClick: () -> Unit = {}) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    report.tags.split(",").filter { it.isNotBlank() }.forEach { tag ->
+                    val category = report.tags.substringBefore(",").trim()
+                    if (category.isNotBlank()) {
                         Surface(
                             color = Color(0xFFF1F3F5),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = tag.trim(),
+                                text = category,
                                 color = Color(0xFF718096),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
+                    }
+                    val (priorityBg, priorityText) = priorityBadgeColors(report.priority)
+                    Surface(
+                        color = priorityBg,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = report.priority,
+                            color = priorityText,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                     }
                 }
                 

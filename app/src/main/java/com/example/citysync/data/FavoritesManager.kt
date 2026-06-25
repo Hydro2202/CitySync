@@ -20,7 +20,7 @@ object FavoritesManager {
             statusText = Color(0xFFB76E00),
             tags = listOf(
                 TagData("Lighting", Color(0xFFF1F3F5), Color(0xFF718096)),
-                TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
+                TagData("High Priority", Color(0xFFFCE8E6), Color(0xFFC5221F))
             ),
             date = "June 4, 2026",
             timestamp = 1717459200000L,
@@ -35,7 +35,7 @@ object FavoritesManager {
             statusText = Color(0xFF5A6B7C),
             tags = listOf(
                 TagData("Infrastructure", Color(0xFFF1F3F5), Color(0xFF718096)),
-                TagData("Low", Color(0xFFEBF8FF), Color(0xFF2B6CB0))
+                TagData("Low Priority", Color(0xFFEBF8FF), Color(0xFF2B6CB0))
             ),
             date = "May 28, 2026",
             timestamp = 1716854400000L,
@@ -50,7 +50,7 @@ object FavoritesManager {
             statusText = Color(0xFF137333),
             tags = listOf(
                 TagData("Traffic", Color(0xFFF1F3F5), Color(0xFF718096)),
-                TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
+                TagData("High Priority", Color(0xFFFCE8E6), Color(0xFFC5221F))
             ),
             date = "May 30, 2026",
             timestamp = 1717027200000L,
@@ -65,7 +65,7 @@ object FavoritesManager {
             statusText = Color(0xFF6B21A8),
             tags = listOf(
                 TagData("Waste", Color(0xFFF1F3F5), Color(0xFF718096)),
-                TagData("Medium", Color(0xFFFFF3CD), Color(0xFF856404))
+                TagData("Medium Priority", Color(0xFFFFF3CD), Color(0xFF856404))
             ),
             date = "June 2, 2026",
             timestamp = 1717286400000L,
@@ -80,7 +80,7 @@ object FavoritesManager {
             statusText = Color(0xFFB76E00),
             tags = listOf(
                 TagData("Roads", Color(0xFFF1F3F5), Color(0xFF718096)),
-                TagData("High", Color(0xFFFCE8E6), Color(0xFFC5221F))
+                TagData("High Priority", Color(0xFFFCE8E6), Color(0xFFC5221F))
             ),
             date = "June 3, 2026",
             timestamp = 1717372800000L,
