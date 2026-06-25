@@ -3,6 +3,7 @@ package com.example.citysync.data
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -18,32 +19,16 @@ class AuthManager {
     }
 
     suspend fun signUp(email: String, password: String, fullName: String, phone: String, address: String) {
-        // Step 1: Create the Auth Account
+        val registrationMetadata = mapOf(
+            "full_name" to fullName.trim(),
+            "phone" to phone.trim(),
+            "address" to address.trim()
+        )
+
         auth.signUpWith(Email) {
-            this.email = email
+            this.email = email.trim()
             this.password = password
-            data = buildJsonObject {
-                put("full_name", fullName)
-                put("phone", phone)
-                put("address", address)
-            }
-        }
-        
-        // Step 2: Manually sync to public.users (Safe Mode)
-        val user = getCurrentUser()
-        if (user != null) {
-            try {
-                postgrest["users"].insert(buildJsonObject {
-                    put("id", user.id)
-                    put("email", email)
-                    put("full_name", fullName)
-                    put("phone", phone)
-                    put("address", address)
-                })
-            } catch (e: Exception) {
-                // If manual sync fails, we don't crash sign-up
-                e.printStackTrace()
-            }
+            data = jsonObject(registrationMetadata)
         }
     }
 
@@ -61,7 +46,7 @@ class AuthManager {
                         eq("id", user.id)
                     }
                 }
-                
+
                 // 2. Call RPC to delete from auth.users
                 postgrest.rpc("delete_user_account")
             } catch (e: Exception) {
@@ -73,4 +58,10 @@ class AuthManager {
     }
 
     fun getCurrentUser() = auth.currentUserOrNull()
+
+    private fun jsonObject(metadata: Map<String, String>): JsonObject = buildJsonObject {
+        metadata.forEach { (key, value) ->
+            put(key, value)
+        }
+    }
 }

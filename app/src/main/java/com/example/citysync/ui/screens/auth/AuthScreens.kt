@@ -604,19 +604,30 @@ fun SignUpWizardScreen(onSignUpComplete: () -> Unit, onSignInRedirect: () -> Uni
                     errorMessage = null
                     scope.launch {
                         try {
-                            val fullName = "$firstName $lastName"
+                            val fullName = "$firstName $lastName".trim()
                             authManager.signUp(email, createPassword, fullName, phone, address)
                             onSignUpComplete()
                         } catch (e: Exception) {
-                            val detail = when (e) {
-                                is RestException -> e.description ?: e.message ?: "Supabase Error"
-                                else -> e.localizedMessage ?: e.message ?: e.toString()
+                            android.util.Log.e("RegistrationError", "Sign-up pipeline conflict detected", e)
+                            val detail = buildString {
+                                if (e is RestException) {
+                                    append(e.error)
+                                    e.description?.let { append(" — ").append(it) }
+                                } else {
+                                    append(e.localizedMessage ?: e.message ?: e.toString())
+                                }
                             }
-                            
+
                             errorMessage = when {
                                 detail.contains("already registered", true) -> "This email is already in use."
-                                detail.contains("Unknown Error", true) -> "CRITICAL: Disable 'Confirm Email' in Supabase Auth Settings!"
-                                else -> "Registration Error: $detail"
+                                detail.contains("duplicate key", true) ||
+                                    detail.contains("23505", true) ||
+                                    detail.contains("users_pkey", true) ->
+                                    "Server profile sync conflict. Re-run supabase/handle_new_user.sql in the SQL Editor, then try again."
+                                detail.contains("database error", true) ||
+                                    detail.contains("Database error saving new user", true) ->
+                                    "Database error during signup. Check Supabase Logs, then re-run handle_new_user.sql."
+                                else -> "Failed to create account. Please verify input formats."
                             }
                             e.printStackTrace()
                         } finally {
