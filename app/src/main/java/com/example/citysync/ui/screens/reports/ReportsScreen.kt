@@ -61,6 +61,17 @@ private fun priorityBadgeColors(priority: String): Pair<Color, Color> = when {
         Color(0xFFEBF8FF) to Color(0xFF2B6CB0)
 }
 
+private fun getReportImage(report: Report): Int {
+    val title = report.title.lowercase()
+    val tags = report.tags.lowercase()
+    return when {
+        title.contains("light") || tags.contains("light") -> R.drawable.brokenlight
+        title.contains("garbage") || tags.contains("waste") -> R.drawable.garbage
+        title.contains("traffic") || tags.contains("traffic") -> R.drawable.brokentraffic
+        else -> R.drawable.street
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
@@ -325,17 +336,16 @@ fun ReportCard(report: Report, onClick: () -> Unit = {}) {
             .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Using a placeholder if no image URL is provided
-            Box(
+            // Using a drawable image as fallback
+            Image(
+                painter = painterResource(id = getReportImage(report)),
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.LightGray),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Outlined.Image, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
-            }
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop
+            )
             
             Spacer(modifier = Modifier.height(12.dp))
             

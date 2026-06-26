@@ -1,6 +1,7 @@
 package com.example.citysync.ui.screens.community
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.R
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
@@ -352,22 +356,20 @@ fun AnnouncementCard(announcement: AnnouncementData) {
 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Media Placeholder (Full width graphics crop)
-                Box(
+                // Media Image from drawable
+                Image(
+                    painter = painterResource(id = when(announcement.category) {
+                        "Infrastructure" -> R.drawable.street
+                        "Utilities" -> R.drawable.brokenlight
+                        else -> R.drawable.city_sync
+                    }),
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFEEEEEE)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Image,
-                        contentDescription = null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
                 

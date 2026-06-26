@@ -16,11 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.citysync.R
 import com.example.citysync.ui.components.NavTab
 import com.example.citysync.ui.components.StandardBottomNavBar
 import com.example.citysync.ui.theme.*
@@ -135,9 +138,20 @@ fun TrackReportScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shadowElevation = 1.dp
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Broken Streetlight on Main Street", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1A202C))
-                        Text("Main Street cor. 5th Avenue, Brgy. 5", fontSize = 13.sp, color = Color(0xFF718096))
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.brokenlight),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Broken Streetlight on Main Street", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1A202C))
+                            Text("Main Street cor. 5th Avenue, Brgy. 5", fontSize = 13.sp, color = Color(0xFF718096))
+                        }
                     }
                 }
             }
